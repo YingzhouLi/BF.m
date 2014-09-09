@@ -14,7 +14,7 @@ if(~exist(log_path, 'dir'))
 end
 
 %% Set up parameters
-N = 64;
+N = 256;
 tol=1e-6;
 mR = 25;         %max rank
 tukey_r = 0.0;

@@ -25,6 +25,8 @@ end
 P = cell(npx1,npx2,npk1,npk2);
 Xid = cell(npx1,npx2,npk1,npk2);
 Kid = cell(npx1,npx2,npk1,npk2);
+MXid = cell(npx1,npx2,npk1,npk2);
+MKid = cell(npx1,npx2,npk1,npk2);
 
 xidx = ccbf_prep(xx,xbox,npx1,npx2);
 kidx = ccbf_prep(kk,kbox,npk1,npk2);
@@ -77,12 +79,14 @@ for x1=1:npx1
                         U{k1,k2} = VC*Utmp*Stmp;
                         P{x1,x2,k1,k2} = 1./diag(Stmp);
                     else
-                        [Utmp,Stmp,Vtmp,xidtmp,kidtmp] = lowrank(fun,xx(ix,:),kk(ik,:),mR,tol);
-                        disp( norm(fun(xx(ix,:),kk(ik,:))-Utmp*Stmp*Vtmp')/norm(fun(xx(ix,:),kk(ik,:))));
+                        [Utmp,Stmp,~,xidtmp,kidtmp,mxidtmp,mkidtmp] = lowrank(fun,xx(ix,:),kk(ik,:),mR,tol);
+                        %disp( norm(fun(xx(ix,:),kk(ik,:))-Utmp*Stmp*Vtmp')/norm(fun(xx(ix,:),kk(ik,:))));
                         U{k1,k2} = Utmp*Stmp;
                         P{x1,x2,k1,k2} = 1./diag(Stmp);
                         Xid{x1,x2,k1,k2} = xidtmp;
                         Kid{x1,x2,k1,k2} = kidtmp;
+                        MXid{x1,x2,k1,k2} = mxidtmp;
+                        MKid{x1,x2,k1,k2} = mkidtmp;
                     end
                 end
             end
@@ -171,14 +175,15 @@ for k1=1:npk1
                     else
                         xidtmp = Xid{x1,x2,k1,k2};
                         kidtmp = Kid{x1,x2,k1,k2};
+                        mxidtmp = MXid{x1,x2,k1,k2};
+                        mkidtmp = MKid{x1,x2,k1,k2};
                         Utmp = fun(xx(ix,:),kk(ik(kidtmp),:));
                         Vtmp = fun(xx(ix(xidtmp),:),kk(ik,:))';
-                        Mtmp = Utmp(xidtmp,:);
-
-                        [~,RU] = qr(Utmp,0);
-                        [VR,RV] = qr(Vtmp,0);
-                        [~,Stmp,Vtmp] = svdtrunc(RU*pinv(Mtmp)*RV',mR,tol);
-                        V{x1,x2} = VR*Vtmp*Stmp;
+                        Mtmp = fun(xx(ix(mxidtmp),:),kk(ik(mkidtmp),:));
+                        [UUtmp,~] = qr(Utmp,0);
+                        [VVtmp,~] = qr(Vtmp,0);
+                        [~,Stmp,Vtmp] = svdtrunc(pinv(UUtmp(mxidtmp,:))*Mtmp*pinv(VVtmp(mkidtmp,:)'),mR,tol);
+                        V{x1,x2} = VVtmp*Vtmp*Stmp;
                     end
                 end
             end
