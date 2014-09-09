@@ -1,4 +1,4 @@
-function Factors = hbf(N, fun, xx, xbox, kk, kbox, mR, tol, disp_flag)
+function Factors = hbf(N, fun, xx, xbox, kk, kbox, mR, tol, disp_flag, fast_low)
     Nk = N;
     levels = floor(log2(Nk/mR)/2);
     iter=1;
@@ -15,7 +15,7 @@ function Factors = hbf(N, fun, xx, xbox, kk, kbox, mR, tol, disp_flag)
         ckkid = find( kk(:,1)>=ck1s & kk(:,1)<ck1e ...
             & kk(:,2)>=ck2s & kk(:,2)<ck2e );
         Factors{iter,2} = kkidglobal(kkid);
-        Factors{iter,1} = ccbf(N, Nk, fun, xx, xbox, kk(kkid,:), kbox, mR, tol, disp_flag);
+        Factors{iter,1} = ccbf(N, Nk, fun, xx, xbox, kk(kkid,:), kbox, mR, tol, disp_flag, fast_low);
         iter = iter+1;
         kbox = ckbox;
         kk = kk(ckkid,:);

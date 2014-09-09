@@ -1,4 +1,4 @@
-function Factor = ccbf(Nx, Nk, fun, xx, xbox, kk, kbox, mR, tol, disp_flag)
+function Factor = ccbf(Nx, Nk, fun, xx, xbox, kk, kbox, mR, tol, disp_flag, fast_low)
 
 if(disp_flag)
     fprintf('CCBF started...\n\n');
@@ -23,6 +23,8 @@ if(disp_flag)
 end
 
 P = cell(npx1,npx2,npk1,npk2);
+Xid = cell(npx1,npx2,npk1,npk2);
+Kid = cell(npx1,npx2,npk1,npk2);
 
 xidx = ccbf_prep(xx,xbox,npx1,npx2);
 kidx = ccbf_prep(kk,kbox,npk1,npk2);
@@ -53,25 +55,35 @@ for x1=1:npx1
             for k2=1:npk2
                 ik = kidx{k1,k2};
                 ix = xidx{x1,x2};
-                f1=f1all(ik,:);
-                f2=f2all(ix,:);
-                ButterflyMat = fun(xx(ix,:),kk(ik,:));
-                if(min(size(ButterflyMat)) <= mR)
+                if(min(length(ix),length(ik)) <= mR+5)
+                    ButterflyMat = fun(xx(ix,:),kk(ik,:));
                     [Utmp,Stmp,~] = svdtrunc(ButterflyMat,mR,tol);
                     U{k1,k2} = Utmp*Stmp;
                     P{x1,x2,k1,k2} = 1./diag(Stmp);
                 else
-                    BR = ButterflyMat*f1;
-                    BHR = ButterflyMat'*f2;
+                    if(~fast_low)
+                        f1=f1all(ik,:);
+                        f2=f2all(ix,:);
+                        ButterflyMat = fun(xx(ix,:),kk(ik,:));
+                        BR = ButterflyMat*f1;
+                        BHR = ButterflyMat'*f2;
 
-                    [VC,~] = qr(BR,0);
-                    [VR,~] = qr(BHR,0);
+                        [VC,~] = qr(BR,0);
+                        [VR,~] = qr(BHR,0);
 
-                    RrVC = f2'*VC;
-                    VRRc = VR'*f1;
-                    [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
-                    U{k1,k2} = VC*Utmp*Stmp;
-                    P{x1,x2,k1,k2} = 1./diag(Stmp);
+                        RrVC = f2'*VC;
+                        VRRc = VR'*f1;
+                        [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
+                        U{k1,k2} = VC*Utmp*Stmp;
+                        P{x1,x2,k1,k2} = 1./diag(Stmp);
+                    else
+                        [Utmp,Stmp,Vtmp,xidtmp,kidtmp] = lowrank(fun,xx(ix,:),kk(ik,:),mR,tol);
+                        disp( norm(fun(xx(ix,:),kk(ik,:))-Utmp*Stmp*Vtmp')/norm(fun(xx(ix,:),kk(ik,:))));
+                        U{k1,k2} = Utmp*Stmp;
+                        P{x1,x2,k1,k2} = 1./diag(Stmp);
+                        Xid{x1,x2,k1,k2} = xidtmp;
+                        Kid{x1,x2,k1,k2} = kidtmp;
+                    end
                 end
             end
         end
@@ -137,23 +149,37 @@ for k1=1:npk1
             for x2=1:npx2
                 ik = kidx{k1,k2};
                 ix = xidx{x1,x2};
-                f1=f1all(ik,:);
-                f2=f2all(ix,:);
-                ButterflyMat = fun(xx(ix,:),kk(ik,:));
-                if(min(size(ButterflyMat)) <= mR)
+                if(min(length(ik),length(ix)) <= mR+5)
+                    ButterflyMat = fun(xx(ix,:),kk(ik,:));
                     [~,Stmp,Vtmp] = svdtrunc(ButterflyMat,mR,tol);
                     V{x1,x2} = Vtmp*Stmp;
                 else
-                    BR = ButterflyMat*f1;
-                    BHR = ButterflyMat'*f2;
+                    if(~fast_low)
+                        f1=f1all(ik,:);
+                        f2=f2all(ix,:);
+                        ButterflyMat = fun(xx(ix,:),kk(ik,:));
+                        BR = ButterflyMat*f1;
+                        BHR = ButterflyMat'*f2;
 
-                    [VC,~] = qr(BR,0);
-                    [VR,~] = qr(BHR,0);
+                        [VC,~] = qr(BR,0);
+                        [VR,~] = qr(BHR,0);
 
-                    RrVC = f2'*VC;
-                    VRRc = VR'*f1;
-                    [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
-                    V{x1,x2} = VR*Vtmp*Stmp;
+                        RrVC = f2'*VC;
+                        VRRc = VR'*f1;
+                        [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
+                        V{x1,x2} = VR*Vtmp*Stmp;
+                    else
+                        xidtmp = Xid{x1,x2,k1,k2};
+                        kidtmp = Kid{x1,x2,k1,k2};
+                        Utmp = fun(xx(ix,:),kk(ik(kidtmp),:));
+                        Vtmp = fun(xx(ix(xidtmp),:),kk(ik,:))';
+                        Mtmp = Utmp(xidtmp,:);
+
+                        [~,RU] = qr(Utmp,0);
+                        [VR,RV] = qr(Vtmp,0);
+                        [~,Stmp,Vtmp] = svdtrunc(RU*pinv(Mtmp)*RV',mR,tol);
+                        V{x1,x2} = VR*Vtmp*Stmp;
+                    end
                 end
             end
         end

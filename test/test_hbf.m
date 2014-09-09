@@ -68,7 +68,7 @@ if(1)
     toc;
 
     tic;
-    Factors = hbf(N, fun, xx, xbox, kk, kbox, mR, tol, 1);
+    Factors = hbf(N, fun, xx, xbox, kk, kbox, mR, tol, 1, 1);
     FactorT = toc;
 
     tic;
