@@ -14,12 +14,13 @@ if(~exist(log_path, 'dir'))
 end
 
 %% Set up parameters
-N = 256;
+N = 64;
 tol=1e-6;
-mR = 49;         %max rank
+mR = 25;         %max rank
+tukey_r = 0.0;
 
-kbox = [-N/2,N/2;-N/2,N/2];
 k = -N/2:N/2-1;
+kbox = [-N/2,N/2;-N/2,N/2];
 [k1s,k2s] = ndgrid(k);
 k1s = k1s(:);  k2s = k2s(:);
 kk = [k1s k2s];
@@ -35,11 +36,11 @@ switch func_name
     case 'funF'
         fun = @funF;
     case 'fun0'
-        fun = @fun0;
+        fun = @(x,k)fun0(x,k,N,tukey_r);
     case 'fun1'
-        fun = @fun1;
+        fun = @(x,k)fun1(x,k,N,tukey_r);
     case 'fun2'
-        fun = @fun2;
+        fun = @(x,k)fun2(x,k,N,tukey_r);
 end
 
 %% Begin test
@@ -86,7 +87,7 @@ if(1)
     disp(['Applying Time     : ' num2str(ApplyT) ' s']);
     disp(['------------------------------------------']);
 
-    %save([data_path 'Factors_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factors','-v7.3');
+    save([data_path 'Factors_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factors','-v7.3');
     fid = fopen([log_path 'Factors_' func_name '_' num2str(N) '_' num2str(mR) '.log'],'w+');
     fclose(fid);
 

@@ -1,4 +1,4 @@
-function y = apply_mfiof_adj(Factor, y)
+function y = apply_ccbf_adj(Factor, y)
     if( size(y,2)==0 )
         return;
     end
