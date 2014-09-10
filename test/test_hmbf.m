@@ -14,8 +14,8 @@ if(~exist(log_path, 'dir'))
 end
 
 %% Set up parameters
-N = 64;
-tol=1e-4;
+N = 256;
+tol=1e-6;
 mR = 25;         %max rank
 
 k = -N/2:N/2-1;

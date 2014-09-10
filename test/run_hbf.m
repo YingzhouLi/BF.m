@@ -1,9 +1,7 @@
-close all;
-clear all;
-clc;
+function run_hbf(N,func_name,mR,tol,tukey_r)
 
 addpath('../src/');
-data_path = './data/';
+data_path = '/home/ryanli/Documents/Research/HBF/data/';
 log_path = './log/';
 
 if(~exist(data_path, 'dir'))
@@ -12,12 +10,6 @@ end
 if(~exist(log_path, 'dir'))
     mkdir(log_path);
 end
-
-%% Set up parameters
-N = 256;
-tol=1e-6;
-mR = 25;         %max rank
-tukey_r = 0.0;
 
 k = -N/2:N/2-1;
 kbox = [-N/2,N/2;-N/2,N/2];
@@ -31,7 +23,6 @@ xbox = [0,1;0,1];
 x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
-func_name = 'fun0';
 switch func_name
     case 'funF'
         fun = @funF;
@@ -52,8 +43,7 @@ switch func_name
         func_name = [func_name num2str(tukey_r)];
 end
 
-%% Begin test
-if(1)
+
     if(1)
         f = randn(N,N) + sqrt(-1)*randn(N,N);
         binstr = sprintf('f_%d.bin', N);
