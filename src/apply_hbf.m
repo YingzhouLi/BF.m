@@ -1,5 +1,6 @@
 function y = apply_hbf(Factors, x)
     if( size(x,2)==0 )
+        y = x;
         return;
     end
 

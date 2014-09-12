@@ -3,7 +3,7 @@ clear all;
 clc;
 
 addpath('../src/');
-data_path = './data/';
+data_path = '/home/ryanli/Documents/Research/HBF/data/';
 log_path = './log/';
 
 if(~exist(data_path, 'dir'))
@@ -31,8 +31,8 @@ x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
 FmR = 25;
-func1_name = 'fun0';
-func2_name = 'fun0';
+func1_name = 'fun0W0.1';
+func2_name = 'fun0W0.1';
 Factor1 = load([data_path 'Factors_' func1_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factors');
 %Factor2 = load([data_path 'Factors_' func2_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factors');
 Factor2=Factor1;
@@ -72,6 +72,8 @@ if(1)
     RunT = FactorT + ApplyT;
 
     disp(['------------------------------------------']);
+    disp(['N                 : ' num2str(N)]);
+    disp(['Function name     : ' func_name]);
     disp(['Max Rank          : ' num2str(mR)]);
     disp(['Tolerance         : ' num2str(tol)]);
     disp(['Relative Error_1  : ' num2str(norm(y-yy,1)/norm(y,1))]);
