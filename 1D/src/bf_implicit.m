@@ -1,73 +1,66 @@
-function Factor = mfiof(N, Factor1, Factor2, xx, xbox, pp, pbox, mR, tol, disp_flag)
+function Factor = bf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, disp_flag)
 
 if(disp_flag)
-    fprintf('MFIOF started...\n\n');
+    fprintf('Butterfly Factorization implicit version started...\n\n');
 end
 
 % Nx is the square root of the number of target points in space
 [Nx,~] = size(xx);
-% Np is the square root of the number of source points in phase
-[Np,~] = size(pp);
+% Nk is the square root of the number of source points in phase
+[Nk,~] = size(kk);
 
 tR=mR+5;
 
 % npx is the number of blocks of each dimension in space
 npx = 2^ceil(log2(sqrt(Nx))+0.5);
-% npp is the number of blocks of each dimension in phase
-npp = 2^ceil(log2(sqrt(Np))+0.5);
+% npk is the number of blocks of each dimension in phase
+npk = 2^ceil(log2(sqrt(Nk))+0.5);
 
 if(disp_flag)
     fprintf('Space  Frequence\n');
-    fprintf('  npx    npp\n');
-    fprintf(' %4d   %4d\n\n',npx,npp);
+    fprintf('  npx    npk\n');
+    fprintf(' %4d   %4d\n\n',npx,npk);
 end
 
-P = cell(npp,npx);
+U_uc = cell(npk,npx);
+V_uc = cell(npk,npx);
+P = cell(npk,npx);
 
-xidx = mfiof_prep(xx,xbox,npx);
-pidx = mfiof_prep(pp,pbox,npp);
+xidx = bf_prep(xx,xbox,npx);
+kidx = bf_prep(kk,kbox,npk);
 
-f1all = randn(Np,tR);% + sqrt(-1)*randn(Np,tR);
+f1all = randn(Nk,tR);% + sqrt(-1)*randn(Nk,tR);
 f2all = randn(Nx,tR);% + sqrt(-1)*randn(Nx,tR);
 
-levels = floor(log2(Nx/mR)/2);
-LS = 3*mR^2*npp*npx;
+levels = floor(log2(Nx/mR/4)/2);
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
-    fprintf('Preallocated sparse matrix size: %d, about %.2f GB\n\n', ...
-        LS,LS*(levels+1)*(2*8+16)/1024/1024/1024);
+    fprintf('Estimated Uncompressed U,V matrix size: %d, about %.2f GB\n\n', ...
+        Nx*npk*tR,2*Nx*npk*tR*16/1024/1024/1024);
 end
-
-U_uc = cell(npp,npx);
-V_uc = cell(npp,npx);
-P = cell(npp,npx);
-
-
 
 if(disp_flag)
     t_start = cputime;
 end
 
-for p=1:npp
-    ip = pidx{p};
-    f1 = zeros(Np,tR);
-    f1(ip,:)=f1all(ip,:);
-    BR = apply_mfiof(Factor1,f1);
-    BR = fft(BR)/sqrt(N);
-    BR = apply_mfiof(Factor2,BR);
+for k=1:npk
+    ik = kidx{k};
+    f1 = zeros(Nk,tR);
+    f1(ik,:)=f1all(ik,:);
+    BR = fun(f1);
     for x=1:npx
         ix = xidx{x};
-        U_uc{x,p}=BR(ix,:);
+        U_uc{x,k}=BR(ix,:);
     end
-if(disp_flag)
-    if( p==1 )
-        fprintf('Multiply U block: (%4d/%4d)',p,npp);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',p,npp);
+    if(disp_flag)
+        if( k==1 )
+            fprintf('Multiply U block: (%4d/%4d)',k,npk);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',k,npk);
+        end
     end
-end
 end
 
 if(disp_flag)
@@ -79,7 +72,6 @@ if(disp_flag)
 end
 clear BR f1;
 
-
 if(disp_flag)
     t_start = cputime;
 end
@@ -88,21 +80,19 @@ for x=1:npx
     ix = xidx{x};
     f2 = zeros(Nx,tR);
     f2(ix,:)=f2all(ix,:);
-    BHR = apply_mfiof_adj(Factor2,f2);
-    BHR = ifft(BHR)*sqrt(N);
-    BHR = apply_mfiof_adj(Factor1,BHR);
-    for p=1:npp
-        ip = pidx{p};
-        V_uc{x,p}=BHR(ip,:);
+    BHR = fun_adj(f2);
+    for k=1:npk
+        ik = kidx{k};
+        V_uc{x,k}=BHR(ik,:);
     end
-if(disp_flag)
-    if( x==1 )
-        fprintf('Multiply V block: (%4d/%4d)',x,npx);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',x,npx);
+    if(disp_flag)
+        if( x==1 )
+            fprintf('Multiply V block: (%4d/%4d)',x,npx);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',x,npx);
+        end
     end
-end
 end
 
 if(disp_flag)
@@ -114,48 +104,48 @@ if(disp_flag)
 end
 clear BHR f2;
 
-global CPreSpr WPreSpr;
+LS = 4*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
 WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                 'ST',zeros(LS,1),'Height',Nx^2,'Width',0,'Offset',0);
-             
-for x=1:npx
-    U = cell(npp,1);
-    for p=1:npp
-        ip = pidx{p};
-        ix = xidx{x};
-        f1=f1all(ip,:);
-        f2=f2all(ix,:);
-        BR = U_uc{x,p};
-        BHR = V_uc{x,p};
+    'ST',zeros(LS,1),'Height',Nx^2,'Width',0,'Offset',0);
 
+for x=1:npx
+    U = cell(npk,1);
+    for k=1:npk
+        ik = kidx{k};
+        ix = xidx{x};
+        f1=f1all(ik,:);
+        f2=f2all(ix,:);
+        BR = U_uc{x,k};
+        BHR = V_uc{x,k};
+        
         [VC,~] = qr(BR,0);
         [VR,~] = qr(BHR,0);
-
+        
         RrVC = f2'*VC;
         VRRc = VR'*f1;
         [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
-        U{p} = VC*Utmp*Stmp;
-        P{x,p} = 1./diag(Stmp);
+        U{k} = VC*Utmp*Stmp;
+        P{x,k} = 1./diag(Stmp);
     end
     xxsub = xx(xidx{x},:);
     xos = xbox(1);
     xlen = xbox(2)-xbox(1);
     xsubbox = [ xos+(x-1)*xlen/npx, xos+x*xlen/npx ];
-if(disp_flag)
-    if( x==1 )
-        fprintf('Compress U block: (%4d/%4d)',x,npx);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',x,npx);
+    if(disp_flag)
+        if( x==1 )
+            fprintf('Compress U block: (%4d/%4d)',x,npx);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',x,npx);
+        end
     end
-end
-    compression1D(U,xxsub,xidx{x},xsubbox,mR,tol,1,levels);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr,CPreSpr,U,xxsub,xidx{x},xsubbox,mR,tol,1,levels);
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Uid = find(WPreSpr.ST~=0);
@@ -176,47 +166,47 @@ if(disp_flag)
     clear memsize;
 end
 
-LS = 3*mR^2*npp*npx;
+LS = 4*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
 WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                 'ST',zeros(LS,1),'Height',Np,'Width',0,'Offset',0);
+    'ST',zeros(LS,1),'Height',Nk,'Width',0,'Offset',0);
 
-for p=1:npp
+for k=1:npk
     V = cell(npx,1);
     for x=1:npx
-        ip = pidx{p};
+        ik = kidx{k};
         ix = xidx{x};
-        f1=f1all(ip,:);
+        f1=f1all(ik,:);
         f2=f2all(ix,:);
-        BR = U_uc{x,p};
-        BHR = V_uc{x,p};
-
+        BR = U_uc{x,k};
+        BHR = V_uc{x,k};
+        
         [VC,~] = qr(BR,0);
         [VR,~] = qr(BHR,0);
-
+        
         RrVC = f2'*VC;
         VRRc = VR'*f1;
         [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
         V{x} = VR*Vtmp*Stmp;
     end
-    ppsub = pp(pidx{p},:);
-    pos = pbox(1);
-    plen = pbox(2)-pbox(1);
-    psubbox = [ pos+(p-1)*plen/npp, pos+p*plen/npp ];
-if(disp_flag)
-    if( p==1 )
-        fprintf('Compress V block: (%4d/%4d)',p,npp);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',p,npp);
+    kksub = kk(kidx{k},:);
+    kos = kbox(1);
+    klen = kbox(2)-kbox(1);
+    ksubbox = [ kos+(k-1)*klen/npk, kos+k*klen/npk ];
+    if(disp_flag)
+        if( k==1 )
+            fprintf('Compress V block: (%4d/%4d)',k,npk);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',k,npk);
+        end
     end
-end
-    compression1D(V,ppsub,pidx{p},psubbox,mR,tol,1,levels);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr,CPreSpr,V,kksub,kidx{k},ksubbox,mR,tol,1,levels);
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Vid = find(WPreSpr.ST~=0);
@@ -239,8 +229,8 @@ end
 
 totalH = zeros(npx,1);
 for x=1:npx
-    for p=1:npp
-        totalH(x) = totalH(x) + length(P{x,p});
+    for k=1:npk
+        totalH(x) = totalH(x) + length(P{x,k});
     end
 end
 currentH = zeros(npx,1);
@@ -250,23 +240,23 @@ for x=1:npx
     end
 end
 
-totalW = zeros(npp,1);
-for p=1:npp
+totalW = zeros(npk,1);
+for k=1:npk
     for x=1:npx
-        totalW(p) = totalW(p) + length(P{x,p});
+        totalW(k) = totalW(k) + length(P{x,k});
     end
 end
-currentW = zeros(npp,1);
-for p=1:npp
-    if(p>1)
-        currentW(p) = currentW(p-1)+totalW(p-1);
+currentW = zeros(npk,1);
+for k=1:npk
+    if(k>1)
+        currentW(k) = currentW(k-1)+totalW(k-1);
     end
 end
 
 totalel = 0;
 for x=1:npx
-    for p=1:npp
-        totalel = totalel + length(P{x,p});
+    for k=1:npk
+        totalel = totalel + length(P{x,k});
     end
 end
 
@@ -276,19 +266,19 @@ YT = zeros(totalel,1);
 ST = zeros(totalel,1);
 for x=1:npx
     localH = currentH(x);
-    for p=1:npp
-        Mlen = length(P{x,p});
+    for k=1:npk
+        Mlen = length(P{x,k});
         X = localH+(1:Mlen);
-        Y = currentW(p)+(1:Mlen);
+        Y = currentW(k)+(1:Mlen);
         idx = offset+1:offset+numel(X);
         XT(idx) = X(:);
         YT(idx) = Y(:);
-        ST(idx) = P{x,p};
+        ST(idx) = P{x,k};
         if(~isempty(idx))
             offset = idx(end);
         end
         localH = localH + Mlen;
-        currentW(p) = currentW(p) + Mlen;
+        currentW(k) = currentW(k) + Mlen;
     end
 end
 SigmaM = sparse(XT,YT,ST);
@@ -310,4 +300,5 @@ Factor.BTol = BTol;
 clear BTol;
 Factor.V = VSpr;
 clear VSpr;
+
 end

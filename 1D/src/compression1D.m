@@ -1,8 +1,7 @@
-function compression1D(W, kk, kkgid, kbox, r, tol, level, NL)
-global WPreSpr CPreSpr;
+function [WPreSpr, CPreSpr] = compression1D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level, NL)
+
 H = size(W{1},1);
 [km,~] = size(W);
-
 
 if( H <= 4*r || level > NL )
     if( level <= NL && H <= 4*r )
@@ -40,16 +39,16 @@ if( H <= 4*r || level > NL )
         WPreSpr.Width = WWidth;
         return;
     end
-    compression1D(W, kk, kkgid, kbox, r, tol, level+1, NL);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level+1, NL);
     return;
 end
 
 WW = cell(2,1);
-WW{1} = cell(km/2,1); % each cell entry will be mxmxr
-WW{2} = cell(km/2,1); % each cell entry will be mxmxr
+WW{1} = cell(km/2,1);
+WW{2} = cell(km/2,1);
 CS = cell(2,km);
 
-kidx = mfiof_prep(kk,kbox,2);
+kidx = bf_prep(kk,kbox,2);
 for k=1:2:km
     r1 = size(W{k},2);
     r2 = size(W{k+1},2);
@@ -80,7 +79,7 @@ for z=1:2
         for k = kk1:kk1+1
             tmpM = CS{z,k};
             [X,Y] = meshgrid(totalH+(1:size(tmpM,1)), ...
-                        currentW(k)+(1:size(tmpM,2)));
+                currentW(k)+(1:size(tmpM,2)));
             X = X';
             Y = Y';
             idx = offset+1:offset+numel(X);
@@ -104,7 +103,7 @@ klen = kbox(2)-kbox(1);
 for z=1:2
     Id = kidx{z};
     ksubbox = [ kos+(z-1)*klen/2, kos+z*klen/2 ];
-    compression1D(WW{z}, kk(Id), kkgid(Id), ksubbox, r, tol, level+1, NL);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr, CPreSpr, WW{z}, kk(Id), kkgid(Id), ksubbox, r, tol, level+1, NL);
 end
 
 end

@@ -1,38 +1,38 @@
-function Factor = fiof(N, fun, xx, xbox, pp, pbox, mR, tol, disp_flag)
+function Factor = bf_explicit(fun, xx, xbox, kk, kbox, mR, tol, disp_flag)
 
 if(disp_flag)
-    fprintf('FIOF started...\n\n');
+    fprintf('Butterfly Factorization explicit version started...\n\n');
 end
 
 % Nx is the square root of the number of target points in space
 [Nx,~] = size(xx);
 % Np is the square root of the number of source points in phase
-[Np,~] = size(pp);
+[Nk,~] = size(kk);
 
 tR=3*mR;
 
 % npx is the number of blocks of each dimension in space
 npx = 2^ceil(log2(sqrt(Nx))+0.5);
-% npp is the number of blocks of each dimension in phase
-npp = 2^ceil(log2(sqrt(Np))+0.5);
+% npk is the number of blocks of each dimension in phase
+npk = 2^ceil(log2(sqrt(Nk))+0.5);
 
 if(disp_flag)
     fprintf('Space  Frequence\n');
-    fprintf('  npx    npp\n');
-    fprintf(' %4d   %4d\n\n',npx,npp);
+    fprintf('  npx    npk\n');
+    fprintf(' %4d   %4d\n\n',npx,npk);
 end
 
-P = cell(npp,npx);
-Ridx = cell(npp,npx);
-Cidx = cell(npp,npx);
-rs = cell(npp,npx);
-cs = cell(npp,npx);
+P = cell(npx,npk);
+Ridx = cell(npx,npk);
+Cidx = cell(npx,npk);
+rs = cell(npx,npk);
+cs = cell(npx,npk);
 
-xidx = mfiof_prep(xx,xbox,npx);
-pidx = mfiof_prep(pp,pbox,npp);
+xidx = bf_prep(xx,xbox,npx);
+kidx = bf_prep(kk,kbox,npk);
 
 levels = floor(log2(Nx/mR/4)/2);
-LS = 4*mR^2*npp*npx;
+LS = 4*mR^2*npk*npx;
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
@@ -40,45 +40,44 @@ if(disp_flag)
         LS,LS*(levels+1)*(2*8+16)/1024/1024/1024);
 end
 
-global CPreSpr WPreSpr;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
 WPreSpr = struct('XT',zeros(4*LS,1),'YT',zeros(4*LS,1), ...
-                 'ST',zeros(4*LS,1),'Height',Nx,'Width',0,'Offset',0);
+    'ST',zeros(4*LS,1),'Height',Nx,'Width',0,'Offset',0);
 
 for x=1:npx
-    U = cell(npp,1);
-    for p=1:npp
-        ip = pidx{p};
+    U = cell(npk,1);
+    for k=1:npk
+        ik = kidx{k};
         ix = xidx{x};
-        [U{p},Stmp,~,Ridx{x,p},Cidx{x,p},rs{x,p},cs{x,p}] = lowrank(xx(ix),pp(ip), fun, tol, tR, mR);
-        P{x,p} = 1./diag(Stmp);
-        U{p} = U{p}*Stmp;
+        [U{k},Stmp,~,Ridx{x,k},Cidx{x,k},rs{x,k},cs{x,k}] = lowrank(xx(ix), kk(ik), fun, tol, tR, mR);
+        P{x,k} = 1./diag(Stmp);
+        U{k} = U{k}*Stmp;
     end
     xxsub = xx(xidx{x},:);
     xos = xbox(1);
     xlen = xbox(2)-xbox(1);
     xsubbox = [ xos+(x-1)*xlen/npx, xos+x*xlen/npx ];
-if(disp_flag)
-    if( x==1 )
-        fprintf('Compress U block: (%4d/%4d)',x,npx);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',x,npx);
+    if(disp_flag)
+        if( x==1 )
+            fprintf('Compress U block: (%4d/%4d)',x,npx);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',x,npx);
+        end
     end
-end
-    compression1D(U,xxsub,xidx{x},xsubbox,mR,tol,1,levels);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr,CPreSpr,U,xxsub,xidx{x},xsubbox,mR,tol,1,levels);
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Uid = find(WPreSpr.ST~=0);
 USpr = sparse(WPreSpr.XT(Uid),WPreSpr.YT(Uid),WPreSpr.ST(Uid));
 if(disp_flag)
     if(length(WPreSpr.XT)>4*LS)
-	fprintf('Bad preallocation U, %d is required',length(WPreSpr.XT));
+        fprintf('Bad preallocation U, %d is required\n',length(WPreSpr.XT));
     end
 end
 clear Uid;
@@ -88,7 +87,7 @@ for l=1:levels
     ATol{l} = sparse(CPreSpr(l).XT(Aid),CPreSpr(l).YT(Aid),CPreSpr(l).ST(Aid));
     if(disp_flag)
         if(length(CPreSpr(l).XT)>LS)
-            fprintf('Bad preallocation A, %d is required',length(CPreSpr(l).XT));
+            fprintf('Bad preallocation A, %d is required\n',length(CPreSpr(l).XT));
         end
     end
 end
@@ -102,44 +101,44 @@ if(disp_flag)
     clear memsize;
 end
 
-LS = 4*mR^2*npp*npx;
+LS = 4*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
 WPreSpr = struct('XT',zeros(4*LS,1),'YT',zeros(4*LS,1), ...
-                 'ST',zeros(4*LS,1),'Height',Np,'Width',0,'Offset',0);
+    'ST',zeros(4*LS,1),'Height',Nk,'Width',0,'Offset',0);
 
-for p=1:npp
+for k=1:npk
     V = cell(npx,1);
     for x=1:npx
-        ip = pidx{p};
+        ik = kidx{k};
         ix = xidx{x};
-        [~,Stmp,V{x}] = lowrankidx(xx(ix),pp(ip),fun,tol,tR,mR,Ridx{x,p},Cidx{x,p},rs{x,p},cs{x,p});
+        [~,Stmp,V{x}] = lowrankidx(xx(ix),kk(ik),fun,tol,mR,Ridx{x,k},Cidx{x,k},rs{x,k},cs{x,k});
         V{x} = V{x}*Stmp;
     end
-    ppsub = pp(pidx{p});
-    pos = pbox(1);
-    plen = pbox(2)-pbox(1);
-    psubbox = [ pos+(p-1)*plen/npp, pos+p*plen/npp ];
-if(disp_flag)
-    if( p==1 )
-        fprintf('Compress V block: (%4d/%4d)',p,npp);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d)',p,npp);
+    kksub = kk(kidx{k});
+    kos = kbox(1);
+    klen = kbox(2)-kbox(1);
+    ksubbox = [ kos+(k-1)*klen/npk, kos+k*klen/npk ];
+    if(disp_flag)
+        if( k==1 )
+            fprintf('Compress V block: (%4d/%4d)',k,npk);
+        else
+            fprintf('\b\b\b\b\b\b\b\b\b\b\b');
+            fprintf('(%4d/%4d)',k,npk);
+        end
     end
-end
-    compression1D(V,ppsub,pidx{p},psubbox,mR,tol,1,levels);
+    [WPreSpr,CPreSpr] = compression1D(WPreSpr,CPreSpr,V,kksub,kidx{k},ksubbox,mR,tol,1,levels);
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Vid = find(WPreSpr.ST~=0);
 VSpr = sparse(WPreSpr.XT(Vid),WPreSpr.YT(Vid),WPreSpr.ST(Vid));
 if(disp_flag)
     if(length(WPreSpr.XT)>4*LS)
-	fprintf('Bad preallocation V, %d is required',length(WPreSpr.XT));
+        fprintf('Bad preallocation V, %d is required\n',length(WPreSpr.XT));
     end
 end
 clear Vid;
@@ -149,7 +148,7 @@ for l=1:levels
     BTol{l} = sparse(CPreSpr(l).XT(Bid),CPreSpr(l).YT(Bid),CPreSpr(l).ST(Bid));
     if(disp_flag)
         if(length(CPreSpr(l).XT)>LS)
-            fprintf('Bad preallocation B, %d is required',length(CPreSpr(l).XT));
+            fprintf('Bad preallocation B, %d is required\n',length(CPreSpr(l).XT));
         end
     end
 end
@@ -165,8 +164,8 @@ end
 
 totalH = zeros(npx,1);
 for x=1:npx
-    for p=1:npp
-        totalH(x) = totalH(x) + length(P{x,p});
+    for k=1:npk
+        totalH(x) = totalH(x) + length(P{x,k});
     end
 end
 currentH = zeros(npx,1);
@@ -176,23 +175,23 @@ for x=1:npx
     end
 end
 
-totalW = zeros(npp,1);
-for p=1:npp
+totalW = zeros(npk,1);
+for k=1:npk
     for x=1:npx
-        totalW(p) = totalW(p) + length(P{x,p});
+        totalW(k) = totalW(k) + length(P{x,k});
     end
 end
-currentW = zeros(npp,1);
-for p=1:npp
-    if(p>1)
-        currentW(p) = currentW(p-1)+totalW(p-1);
+currentW = zeros(npk,1);
+for k=1:npk
+    if(k>1)
+        currentW(k) = currentW(k-1)+totalW(k-1);
     end
 end
 
 totalel = 0;
 for x=1:npx
-    for p=1:npp
-        totalel = totalel + length(P{x,p});
+    for k=1:npk
+        totalel = totalel + length(P{x,k});
     end
 end
 
@@ -202,19 +201,19 @@ YT = zeros(totalel,1);
 ST = zeros(totalel,1);
 for x=1:npx
     localH = currentH(x);
-    for p=1:npp
-        Mlen = length(P{x,p});
+    for k=1:npk
+        Mlen = length(P{x,k});
         X = localH+(1:Mlen);
-        Y = currentW(p)+(1:Mlen);
+        Y = currentW(k)+(1:Mlen);
         idx = offset+1:offset+numel(X);
         XT(idx) = X(:);
         YT(idx) = Y(:);
-        ST(idx) = P{x,p};
+        ST(idx) = P{x,k};
         if(~isempty(idx))
             offset = idx(end);
         end
         localH = localH + Mlen;
-        currentW(p) = currentW(p) + Mlen;
+        currentW(k) = currentW(k) + Mlen;
     end
 end
 SigmaM = sparse(XT,YT,ST);
@@ -236,4 +235,5 @@ Factor.BTol = BTol;
 clear BTol;
 Factor.V = VSpr;
 clear VSpr;
+
 end
