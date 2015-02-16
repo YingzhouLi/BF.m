@@ -15,6 +15,6 @@ Butterfly Factorization (BF)
 	
 	   Butterfly factorization for 2D problems with singularity at origin.
 
-	* Hierarchical Butterfly Factorization (HBF)
+	* Multiscale Butterfly Factorization (MBF)
 	
 	  Butterfly factorization for 2D problems with singularity at origin.
