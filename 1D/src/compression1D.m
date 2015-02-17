@@ -3,8 +3,8 @@ function [WPreSpr, CPreSpr] = compression1D(WPreSpr, CPreSpr, W, kk, kkgid, kbox
 H = size(W{1},1);
 [km,~] = size(W);
 
-if( H <= 4*r || level > NL )
-    if( level <= NL && H <= 4*r )
+if( H <= 2*r || level > NL )
+    if( level <= NL && H <= 2*r )
         COffset = CPreSpr(level).Offset;
         CHeight = CPreSpr(level).Height;
         CWidth = CPreSpr(level).Width;

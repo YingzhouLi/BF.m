@@ -31,8 +31,8 @@ cs = cell(npx,npk);
 xidx = bf_prep(xx,xbox,npx);
 kidx = bf_prep(kk,kbox,npk);
 
-levels = floor(log2(Nx/mR/4)/2);
-LS = 4*mR^2*npk*npx;
+levels = ceil(log2(Nx/npx/mR/2));
+LS = 2*mR^2*npk*npx;
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
@@ -42,8 +42,8 @@ end
 
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(4*LS,1),'YT',zeros(4*LS,1), ...
-    'ST',zeros(4*LS,1),'Height',Nx,'Width',0,'Offset',0);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nx,'Width',0,'Offset',0);
 
 for x=1:npx
     U = cell(npk,1);
@@ -76,7 +76,7 @@ end
 Uid = find(WPreSpr.ST~=0);
 USpr = sparse(WPreSpr.XT(Uid),WPreSpr.YT(Uid),WPreSpr.ST(Uid));
 if(disp_flag)
-    if(length(WPreSpr.XT)>4*LS)
+    if(length(WPreSpr.XT)>2*LS)
         fprintf('Bad preallocation U, %d is required\n',length(WPreSpr.XT));
     end
 end
@@ -101,11 +101,10 @@ if(disp_flag)
     clear memsize;
 end
 
-LS = 4*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(4*LS,1),'YT',zeros(4*LS,1), ...
-    'ST',zeros(4*LS,1),'Height',Nk,'Width',0,'Offset',0);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nk,'Width',0,'Offset',0);
 
 for k=1:npk
     V = cell(npx,1);
@@ -137,7 +136,7 @@ end
 Vid = find(WPreSpr.ST~=0);
 VSpr = sparse(WPreSpr.XT(Vid),WPreSpr.YT(Vid),WPreSpr.ST(Vid));
 if(disp_flag)
-    if(length(WPreSpr.XT)>4*LS)
+    if(length(WPreSpr.XT)>2*LS)
         fprintf('Bad preallocation V, %d is required\n',length(WPreSpr.XT));
     end
 end

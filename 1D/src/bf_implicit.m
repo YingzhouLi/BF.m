@@ -32,7 +32,7 @@ kidx = bf_prep(kk,kbox,npk);
 f1all = randn(Nk,tR);% + sqrt(-1)*randn(Nk,tR);
 f2all = randn(Nx,tR);% + sqrt(-1)*randn(Nx,tR);
 
-levels = floor(log2(Nx/mR/4)/2);
+levels = ceil(log2(Nx/npx/mR/2));
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
@@ -104,11 +104,11 @@ if(disp_flag)
 end
 clear BHR f2;
 
-LS = 4*mR^2*npk*npx;
+LS = 2*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-    'ST',zeros(LS,1),'Height',Nx^2,'Width',0,'Offset',0);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nx^2,'Width',0,'Offset',0);
 
 for x=1:npx
     U = cell(npk,1);
@@ -150,11 +150,21 @@ end
 
 Uid = find(WPreSpr.ST~=0);
 USpr = sparse(WPreSpr.XT(Uid),WPreSpr.YT(Uid),WPreSpr.ST(Uid));
+if(disp_flag)
+    if(length(WPreSpr.XT)>2*LS)
+        fprintf('Bad preallocation U, %d is required\n',length(WPreSpr.XT));
+    end
+end
 clear Uid;
 ATol = cell(levels,1);
 for l=1:levels
     Aid = find(CPreSpr(l).ST~=0);
     ATol{l} = sparse(CPreSpr(l).XT(Aid),CPreSpr(l).YT(Aid),CPreSpr(l).ST(Aid));
+    if(disp_flag)
+        if(length(CPreSpr(l).XT)>LS)
+            fprintf('Bad preallocation A, %d is required\n',length(CPreSpr(l).XT));
+        end
+    end
 end
 clear Aid;
 
@@ -166,11 +176,10 @@ if(disp_flag)
     clear memsize;
 end
 
-LS = 4*mR^2*npk*npx;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-    'ST',zeros(LS,1),'Height',Nk,'Width',0,'Offset',0);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nk,'Width',0,'Offset',0);
 
 for k=1:npk
     V = cell(npx,1);
@@ -211,11 +220,21 @@ end
 
 Vid = find(WPreSpr.ST~=0);
 VSpr = sparse(WPreSpr.XT(Vid),WPreSpr.YT(Vid),WPreSpr.ST(Vid));
+if(disp_flag)
+    if(length(WPreSpr.XT)>2*LS)
+        fprintf('Bad preallocation V, %d is required\n',length(WPreSpr.XT));
+    end
+end
 clear Vid;
 BTol = cell(levels,1);
 for l=1:levels
     Bid = find(CPreSpr(l).ST~=0);
     BTol{l} = sparse(CPreSpr(l).XT(Bid),CPreSpr(l).YT(Bid),CPreSpr(l).ST(Bid));
+    if(disp_flag)
+        if(length(CPreSpr(l).XT)>LS)
+            fprintf('Bad preallocation B, %d is required\n',length(CPreSpr(l).XT));
+        end
+    end
 end
 clear Bid;
 clear WPreSpr CPreSpr;
