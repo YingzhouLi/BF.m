@@ -37,7 +37,7 @@ LS = 2*mR^2*npk*npx;
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
     fprintf('Preallocated sparse matrix size: %d, about %.2f GB\n', ...
-        LS,LS*(levels+1)*(2*8+16)/1024/1024/1024);
+        LS,LS*(levels+2)*(2*8+16)/1024/1024/1024);
 end
 
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
