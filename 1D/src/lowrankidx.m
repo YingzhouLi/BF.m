@@ -8,10 +8,10 @@ if(Nx==0 || Np==0)
 end
 
 %get rows
-MR = fun(x(Ridx),p);
+MR = fun(x(Ridx,:),p);
 
 %get columns
-MC = fun(x,p(Cidx));
+MC = fun(x,p(Cidx,:));
 
 %get middle matrix
 [QC,~,~] = qr(MC,0);
@@ -19,7 +19,7 @@ MC = fun(x,p(Cidx));
 
 M1 = QC(rs,:);
 M2 = QR(cs,:);
-M3 = fun(x(rs),p(cs));
+M3 = fun(x(rs,:),p(cs,:));
 MD = pinv(M1) * (M3* pinv(M2'));
 [U,S,V] = svdtrunc(MD,mR,tol);
 U = QC*U;
