@@ -10,7 +10,7 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 1023;
+N = 1024;
 tol=1e-5;
 mR = 6;         %max rank
 
