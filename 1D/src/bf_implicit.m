@@ -32,7 +32,7 @@ kidx = bf_prep(kk,kbox,npk);
 f1all = randn(Nk,tR);% + sqrt(-1)*randn(Nk,tR);
 f2all = randn(Nx,tR);% + sqrt(-1)*randn(Nx,tR);
 
-levels = ceil(log2(Nx/npx/mR/2));
+levels = max(ceil(log2(Nx/npx/mR/2)),0);
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
@@ -119,10 +119,10 @@ for x=1:npx
         f2=f2all(ix,:);
         BR = U_uc{x,k};
         BHR = V_uc{x,k};
-        
+
         [VC,~] = qr(BR,0);
         [VR,~] = qr(BHR,0);
-        
+
         RrVC = f2'*VC;
         VRRc = VR'*f1;
         [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
@@ -190,10 +190,10 @@ for k=1:npk
         f2=f2all(ix,:);
         BR = U_uc{x,k};
         BHR = V_uc{x,k};
-        
+
         [VC,~] = qr(BR,0);
         [VR,~] = qr(BHR,0);
-        
+
         RrVC = f2'*VC;
         VRRc = VR'*f1;
         [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
