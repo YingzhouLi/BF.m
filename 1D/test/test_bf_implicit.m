@@ -12,7 +12,7 @@ end
 %% Set up parameters
 N = 1024;
 tol=1e-5;
-mR = 6;         %max rank
+mR = 6;
 
 kbox = [1,N+1];
 k = 1:N;
@@ -33,7 +33,7 @@ fun_adj = @(y)apply_bf_adj(Factor1.Factor,ifft(apply_bf_adj(Factor2.Factor,y))*s
 
 %% Begin test
 if(1)
-    f = randn(N,1) + sqrt(-1)*randn(N,1);
+    f = randn(N,1) + 1i*randn(N,1);
     binstr = sprintf('f_%d.bin', N);
     fid = fopen(binstr,'w');
     string = {'CpxNumMat'};

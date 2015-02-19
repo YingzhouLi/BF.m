@@ -33,7 +33,7 @@ end
 
 %% Begin test
 if(1)
-    f = randn(N,1) + sqrt(-1)*randn(N,1);
+    f = randn(N,1) + 1i*randn(N,1);
     binstr = sprintf('f_%d.bin', N);
     fid = fopen(binstr,'w');
     string = {'CpxNumMat'};

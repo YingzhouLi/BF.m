@@ -15,7 +15,7 @@ xbox = [1,N+1];
 x = 1:N;
 xx = x(:);
 
-f = randn(N,1) + sqrt(-1)*randn(N,1);
+f = randn(N,1) + 1i*randn(N,1);
 
 y = fun(f);
 

@@ -24,7 +24,7 @@ switch func_name
         fun = @(x,k)funH(N,x,k);
 end
 
-f = randn(N,1) + sqrt(-1)*randn(N,1);
+f = randn(N,1) + 1i*randn(N,1);
 
 tic;
 Factor = bf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 1);

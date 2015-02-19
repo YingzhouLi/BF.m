@@ -4,7 +4,10 @@ Nx = size(x,1);
 Np = size(p,1);
 
 if(Nx==0 || Np==0)
-    error('wrong size');
+    U = zeros(Nx,0);
+    S = zeros(0,0);
+    V = zeros(Np,0);
+    return;
 end
 
 %get rows
