@@ -1,6 +1,6 @@
 close all;
 clear all;
-% clc;
+clc;
 
 addpath('../src/');
 data_path = './data/';
@@ -12,7 +12,7 @@ end
 %% Set up parameters
 N = 128;
 tol=1e-5;
-mR = 16;         %max rank
+mR = 16;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k

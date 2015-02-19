@@ -29,10 +29,10 @@ end
 xidx = bf_prep(xx,xbox,npx1,npx2);
 kidx = bf_prep(kk,kbox,npk1,npk2);
 
-f1all = randn(Nkk,tR);% + sqrt(-1)*randn(Nkk,tR);
-f2all = randn(Nxx,tR);% + sqrt(-1)*randn(Nxx,tR);
+f1all = randn(Nkk,tR);% + 1i*randn(Nkk,tR);
+f2all = randn(Nxx,tR);% + 1i*randn(Nxx,tR);
 
-levels = 0;%ceil(log2(Nxx/npx1/npx2/mR/4));
+levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
 LS = 4*mR^2*npk1*npk2*npx1*npx2;
 
 if(disp_flag)
@@ -134,10 +134,10 @@ for x1=1:npx1
                 f2=f2all(ix,:);
                 BR = U_uc{x1,x2,k1,k2};
                 BHR = V_uc{x1,x2,k1,k2};
-                
+
                 [VC,~] = qr(BR,0);
                 [VR,~] = qr(BHR,0);
-                
+
                 RrVC = f2'*VC;
                 VRRc = VR'*f1;
                 [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
@@ -202,10 +202,10 @@ for k1=1:npk1
                 f2=f2all(ix,:);
                 BR = U_uc{x1,x2,k1,k2};
                 BHR = V_uc{x1,x2,k1,k2};
-                
+
                 [VC,~] = qr(BR,0);
                 [VR,~] = qr(BHR,0);
-                
+
                 RrVC = f2'*VC;
                 VRRc = VR'*f1;
                 [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);

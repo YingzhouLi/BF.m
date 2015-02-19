@@ -35,7 +35,7 @@ cs = cell(npx1,npx2,npk1,npk2);
 xidx = bf_prep(xx,xbox,npx1,npx2);
 kidx = bf_prep(kk,kbox,npk1,npk2);
 
-levels = 1;%max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
+levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
 LS = 4*mR^2*npk1*npk2*npx1*npx2;
 
 if(disp_flag)
@@ -115,8 +115,8 @@ end
 
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-    'ST',zeros(LS,1),'Height',Nkk,'Width',0,'Offset',0);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nkk,'Width',0,'Offset',0);
 
 for k1=1:npk1
     for k2=1:npk2

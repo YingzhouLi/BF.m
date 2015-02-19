@@ -1,3 +1,4 @@
+addpath('../src/');
 log_path = './log/';
 data_path = './data/';
 
