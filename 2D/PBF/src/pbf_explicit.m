@@ -1,8 +1,12 @@
-function Factor = fiof(N, fun, xx, xbox, pp, pbox, mR, tol, disp_flag)
+function Factor = pbf_explicit(N, fun, xx, xbox, kk, kbox, mR, tol, disp_flag)
 
 if(disp_flag)
-    fprintf('FIOF started...\n\n');
+    fprintf('Polar Butterfly Factorization explicit version started...\n\n');
 end
+
+pp = pbf_k2p(N,kk);
+pbox = (kbox+N/2)/N;
+pbox(1,2) = pbox(1,2)+1/N;
 
 % Nx is the square root of the number of target points in space
 [Nxx,~] = size(xx);
@@ -14,10 +18,10 @@ Np = floor(sqrt(Npp));
 tR=mR+5;
 
 % npx is the number of blocks of each dimension in space
-npx1 = 2^ceil(log2(sqrt(Nx))+0.5);
-npx2 = 2^ceil(log2(sqrt(Nx))+0.5);
+npx1 = 2^ceil(log2(sqrt(Nx)));
+npx2 = 2^ceil(log2(sqrt(Nx)));
 % npp is the number of blocks of each dimension in phase
-npp1 = 2^ceil(log2(sqrt(Np))+0.5);
+npp1 = 2^ceil(log2(sqrt(Np)));
 npp2 = 4*2^ceil(log2(sqrt(Np)));
 
 if(disp_flag)
@@ -27,27 +31,27 @@ if(disp_flag)
 end
 
 P = cell(npx1,npx2,npp1,npp2);
+Ridx = cell(npx1,npx2,npp1,npp2);
+Cidx = cell(npx1,npx2,npp1,npp2);
+rs = cell(npx1,npx2,npp1,npp2);
+cs = cell(npx1,npx2,npp1,npp2);
 
-xidx = mfiof_prep(xx,xbox,npx1,npx2);
-pidx = mfiof_prep(pp,pbox,npp1,npp2);
+xidx = bf_prep(xx,xbox,npx1,npx2);
+pidx = bf_prep(pp,pbox,npp1,npp2);
 
-f1all = randn(Npp,tR);% + sqrt(-1)*randn(Npp,tR);
-f2all = randn(Nxx,tR);% + sqrt(-1)*randn(Nxx,tR);
-
-levels = floor(log2(Nx/mR)/2);
-LS = 3*mR^2*npp1*npp2*npx1*npx2;
+levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
+LS = 4*mR^2*npp1*npp2*npx1*npx2;
 
 if(disp_flag)
     fprintf('Compression levels: %d\n',levels);
     fprintf('Preallocated sparse matrix size: %d, about %.2f GB\n', ...
-        LS,LS*(levels+1)*(2*8+16)/1024/1024/1024);
+        LS,LS*(levels+2)*(2*8+16)/1024/1024/1024);
 end
 
-global CPreSpr WPreSpr;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                 'ST',zeros(LS,1),'Height',Nx^2,'Width',0,'Offset',0);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Nxx,'Width',0,'Offset',0);
 
 for x1=1:npx1
     for x2=1:npx2
@@ -56,26 +60,10 @@ for x1=1:npx1
             for p2=1:npp2
                 ip = pidx{p1,p2};
                 ix = xidx{x1,x2};
-                f1=f1all(ip,:);
-                f2=f2all(ix,:);
-                ButterflyMat = fun(xx(ix,:),mfiof_p2k(N,pp(ip,:)));
-                if(min(size(ButterflyMat)) <= mR)
-                    [Utmp,Stmp,~] = svdtrunc(ButterflyMat,mR,tol);
-                    U{p1,p2} = Utmp*Stmp;
-                    P{x1,x2,p1,p2} = 1./diag(Stmp);
-                else
-                    BR = ButterflyMat*f1;
-                    BHR = ButterflyMat'*f2;
-
-                    [VC,~] = qr(BR,0);
-                    [VR,~] = qr(BHR,0);
-
-                    RrVC = f2'*VC;
-                    VRRc = VR'*f1;
-                    [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
-                    U{p1,p2} = VC*Utmp*Stmp;
-                    P{x1,x2,p1,p2} = 1./diag(Stmp);
-                end
+                [U{p1,p2},Stmp,~,Ridx{x1,x2,p1,p2},Cidx{x1,x2,p1,p2},rs{x1,x2,p1,p2},cs{x1,x2,p1,p2}] = ...
+                    lowrank(xx(ix,:), kk(ip,:), fun, tol, tR, mR);
+                P{x1,x2,p1,p2} = 1./diag(Stmp);
+                U{p1,p2} = U{p1,p2}*Stmp;
             end
         end
         xxsub = xx(xidx{x1,x2},:);
@@ -84,30 +72,40 @@ for x1=1:npx1
         x2os = xbox(2,1);
         x2len = xbox(2,2)-xbox(2,1);
         xsubbox = [ x1os+(x1-1)*x1len/npx1, x1os+x1*x1len/npx1; ...
-                    x2os+(x2-1)*x2len/npx2, x2os+x2*x2len/npx2];
-if(disp_flag)
-    if( x1==1 && x2==1 )
-        fprintf('Compress U block: (%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
-    end
-end
-        compression2D(U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels);
+            x2os+(x2-1)*x2len/npx2, x2os+x2*x2len/npx2];
+        if(disp_flag)
+            if( x1==1 && x2==1 )
+                fprintf('Compress U block: (%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
+            else
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
+                fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
+            end
+        end
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels);
     end
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Uid = find(WPreSpr.ST~=0);
 USpr = sparse(WPreSpr.XT(Uid),WPreSpr.YT(Uid),WPreSpr.ST(Uid));
+if(disp_flag)
+    if(length(WPreSpr.XT)>2*LS)
+        fprintf('Bad preallocation U, %d is required\n',length(WPreSpr.XT));
+    end
+end
 clear Uid;
 ATol = cell(levels,1);
 for l=1:levels
     Aid = find(CPreSpr(l).ST~=0);
     ATol{l} = sparse(CPreSpr(l).XT(Aid),CPreSpr(l).YT(Aid),CPreSpr(l).ST(Aid));
+    if(disp_flag)
+        if(length(CPreSpr(l).XT)>LS)
+            fprintf('Bad preallocation A, %d is required\n',length(CPreSpr(l).XT));
+        end
+    end
 end
 clear Aid;
 
@@ -119,11 +117,10 @@ if(disp_flag)
     clear memsize;
 end
 
-LS = 3*mR^2*npp1*npp2*npx1*npx2;
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                        'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
-WPreSpr = struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
-                 'ST',zeros(LS,1),'Height',Np^2,'Width',0,'Offset',0);
+    'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
+WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
+    'ST',zeros(2*LS,1),'Height',Np^2,'Width',0,'Offset',0);
 
 for p1=1:npp1
     for p2=1:npp2
@@ -132,24 +129,9 @@ for p1=1:npp1
             for x2=1:npx2
                 ip = pidx{p1,p2};
                 ix = xidx{x1,x2};
-                f1=f1all(ip,:);
-                f2=f2all(ix,:);
-                ButterflyMat = fun(xx(ix,:),mfiof_p2k(N,pp(ip,:)));
-                if(min(size(ButterflyMat)) <= mR)
-                    [~,Stmp,Vtmp] = svdtrunc(ButterflyMat,mR,tol);
-                    V{x1,x2} = Vtmp*Stmp;
-                else
-                    BR = ButterflyMat*f1;
-                    BHR = ButterflyMat'*f2;
-
-                    [VC,~] = qr(BR,0);
-                    [VR,~] = qr(BHR,0);
-
-                    RrVC = f2'*VC;
-                    VRRc = VR'*f1;
-                    [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * (f2'*BR) * pinv(VRRc),mR,tol);
-                    V{x1,x2} = VR*Vtmp*Stmp;
-                end
+                [~,Stmp,V{x1,x2}] = lowrankidx(xx(ix,:),kk(ip,:),fun,tol,mR,...
+                    Ridx{x1,x2,p1,p2},Cidx{x1,x2,p1,p2},rs{x1,x2,p1,p2},cs{x1,x2,p1,p2});
+                V{x1,x2} = V{x1,x2}*Stmp;
             end
         end
         ppsub = pp(pidx{p1,p2},:);
@@ -158,30 +140,40 @@ for p1=1:npp1
         p2os = pbox(2,1);
         p2len = pbox(2,2)-pbox(2,1);
         psubbox = [ p1os+(p1-1)*p1len/npp1, p1os+p1*p1len/npp1; ...
-                    p2os+(p2-1)*p2len/npp2, p2os+p2*p2len/npp2];
-if(disp_flag)
-    if( p1==1 && p2==1 )
-        fprintf('Compress V block: (%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
-    else
-        fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
-        fprintf('(%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
-    end
-end
-        compression2D(V,ppsub,pidx{p1,p2},psubbox,mR,tol,1,levels);
+            p2os+(p2-1)*p2len/npp2, p2os+p2*p2len/npp2];
+        if(disp_flag)
+            if( p1==1 && p2==1 )
+                fprintf('Compress V block: (%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
+            else
+                fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
+                fprintf('(%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
+            end
+        end
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,ppsub,pidx{p1,p2},psubbox,mR,tol,1,levels);
     end
 end
 
 if(disp_flag)
-	fprintf('\n');
+    fprintf('\n');
 end
 
 Vid = find(WPreSpr.ST~=0);
 VSpr = sparse(WPreSpr.XT(Vid),WPreSpr.YT(Vid),WPreSpr.ST(Vid));
+if(disp_flag)
+    if(length(WPreSpr.XT)>2*LS)
+        fprintf('Bad preallocation V, %d is required\n',length(WPreSpr.XT));
+    end
+end
 clear Vid;
 BTol = cell(levels,1);
 for l=1:levels
     Bid = find(CPreSpr(l).ST~=0);
     BTol{l} = sparse(CPreSpr(l).XT(Bid),CPreSpr(l).YT(Bid),CPreSpr(l).ST(Bid));
+    if(disp_flag)
+        if(length(CPreSpr(l).XT)>LS)
+            fprintf('Bad preallocation B, %d is required\n',length(CPreSpr(l).XT));
+        end
+    end
 end
 clear Bid;
 clear WPreSpr CPreSpr;
