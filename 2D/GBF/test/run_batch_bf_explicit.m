@@ -11,7 +11,7 @@ for func_i = 1:length(func_list)
         fid = fopen([log_path 'Factor_' func_name '_' num2str(N) '.log'],'a+');
         for mR = 6:2:10
             tol = 1e-12;
-            run_bf_explicit(N, func_name, mR, tol, fid);
+            run_bf_explicit(N, func_name, mR, tol, fid, mR==6^2);
             fprintf('Func %s, N %4d, mR %2d finished.\n',func_list{func_i},N,mR);
         end
         fclose(fid);

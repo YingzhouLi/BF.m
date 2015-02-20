@@ -1,4 +1,4 @@
-function run_pbf_explicit(N, func_name, mR, tol, fid)
+function run_pbf_explicit(N, func_name, mR, tol, fid, saveflag)
 
 addpath('../../GBF/src/');
 addpath('../src/');
@@ -35,7 +35,7 @@ f = randn(N,N) + 1i*randn(N,N);
 f = reshape(f,N^2,1);
 
 tic;
-Factor = pbf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 1);
+Factor = pbf_explicit(N, fun, xx, xbox, kk, kbox, mR, tol, 1);
 FactorT = toc;
 
 tic;
@@ -60,6 +60,8 @@ fprintf(fid,'Factorization Time: %.3e mins\n', FactorT/60);
 fprintf(fid,'Applying Time     : %.3e s\n', ApplyT);
 fprintf(fid,'------------------------------------------\n\n');
 
-save([data_path 'Factor_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factor','-v7.3');
+if(saveflag)
+    save([data_path 'Factor_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factor','-v7.3');
+end
 
 end

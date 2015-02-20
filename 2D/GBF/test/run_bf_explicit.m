@@ -1,4 +1,4 @@
-function run_bf_explicit(N, func_name, mR, tol, fid)
+function run_bf_explicit(N, func_name, mR, tol, fid, saveflag)
 
 addpath('../src/');
 data_path = './data/';
@@ -59,6 +59,8 @@ fprintf(fid,'Factorization Time: %.3e mins\n', FactorT/60);
 fprintf(fid,'Applying Time     : %.3e s\n', ApplyT);
 fprintf(fid,'------------------------------------------\n\n');
 
-save([data_path 'Factor_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factor','-v7.3');
+if(saveflag)
+    save([data_path 'Factor_' func_name '_' num2str(N) '_' num2str(mR) '.mat'],'Factor','-v7.3');
+end
 
 end
