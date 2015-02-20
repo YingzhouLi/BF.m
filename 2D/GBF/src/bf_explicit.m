@@ -35,7 +35,7 @@ cs = cell(npx1,npx2,npk1,npk2);
 xidx = bf_prep(xx,xbox,npx1,npx2);
 kidx = bf_prep(kk,kbox,npk1,npk2);
 
-levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
+levels = max(ceil(log2(Nkk/npk1/npk2/mR/4)),0);
 LS = 4*mR^2*npk1*npk2*npx1*npx2;
 
 if(disp_flag)
