@@ -1,11 +1,11 @@
-function compression2D(W, kk, kkgid, kbox, r, tol, level, NL)
-global WPreSpr CPreSpr;
+function [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level, NL)
+
 H = size(W{1,1},1);
 [km1,km2] = size(W);
 
 
-if( H <= 4*r || level > NL )
-    if( level <= NL && H <= 4*r )
+if( H <= 0 || level > NL )
+    if( level <= NL && H <= 2*r )
         COffset = CPreSpr(level).Offset;
         CHeight = CPreSpr(level).Height;
         CWidth = CPreSpr(level).Width;
@@ -38,25 +38,25 @@ if( H <= 4*r || level > NL )
                 if(~isempty(idx))
                     WOffset = idx(end);
                 end
-
+                
             end
         end
         WPreSpr.Offset = WOffset;
         WPreSpr.Width = WWidth;
         return;
     end
-    compression2D(W, kk, kkgid, kbox, r, tol, level+1, NL);
+    [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level+1, NL);
     return;
 end
 
 WW = cell(2,2);
-WW{1,1} = cell(km1/2,km2/2); % each cell entry will be mxmxr
-WW{1,2} = cell(km1/2,km2/2); % each cell entry will be mxmxr
-WW{2,1} = cell(km1/2,km2/2); % each cell entry will be mxmxr
-WW{2,2} = cell(km1/2,km2/2); % each cell entry will be mxmxr
-CS = cell(2,2,km1,km2); % each cell entry should overall be rx4r
+WW{1,1} = cell(km1/2,km2/2);
+WW{1,2} = cell(km1/2,km2/2);
+WW{2,1} = cell(km1/2,km2/2);
+WW{2,2} = cell(km1/2,km2/2);
+CS = cell(2,2,km1,km2);
 
-kidx = ccbf_prep(kk,kbox,2,2);
+kidx = bf_prep(kk,kbox,2,2);
 for k1=1:2:km1
     for k2=1:2:km2
         r1 = size(W{k1,k2},2);
@@ -67,7 +67,7 @@ for k1=1:2:km1
             for j=1:2
                 Id = kidx{i,j};
                 chunk = [W{k1,k2}(Id,:), W{k1,k2+1}(Id,:), ...
-                         W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
+                    W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
                 [Wtmp,S,V] = svdtrunc(chunk,r,tol);
                 WW{i,j}{(k1+1)/2,(k2+1)/2} = Wtmp*S;
                 CS{i,j,k1,k2} = V(1:r1,:)';
@@ -101,7 +101,7 @@ for z1=1:2
                     for k2 = kk2:kk2+1
                         tmpM = CS{z1,z2,k1,k2};
                         [X,Y] = meshgrid(totalH+(1:size(tmpM,1)), ...
-                                    currentW(k1,k2)+(1:size(tmpM,2)));
+                            currentW(k1,k2)+(1:size(tmpM,2)));
                         X = X';
                         Y = Y';
                         idx = offset+1:offset+numel(X);
@@ -131,8 +131,8 @@ for z1=1:2
     for z2=1:2
         Id = kidx{z1,z2};
         ksubbox = [ k1os+(z1-1)*k1len/2, k1os+z1*k1len/2; ...
-                    k2os+(z2-1)*k2len/2, k2os+z2*k2len/2];
-        compression2D(WW{z1,z2}, kk(Id,:), kkgid(Id), ksubbox, r, tol, level+1, NL);
+            k2os+(z2-1)*k2len/2, k2os+z2*k2len/2];
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, WW{z1,z2}, kk(Id,:), kkgid(Id), ksubbox, r, tol, level+1, NL);
     end
 end
 
