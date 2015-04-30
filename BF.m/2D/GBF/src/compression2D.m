@@ -68,7 +68,7 @@ for k1=1:2:km1
                 Id = kidx{i,j};
                 chunk = [W{k1,k2}(Id,:), W{k1,k2+1}(Id,:), ...
                     W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
-                [Wtmp,S,V] = svdtrunc(chunk,r,tol);
+                [Wtmp,S,V] = svdrand(chunk,r,tol);
                 WW{i,j}{(k1+1)/2,(k2+1)/2} = Wtmp*S;
                 CS{i,j,k1,k2} = V(1:r1,:)';
                 CS{i,j,k1,k2+1} = V(r1+(1:r2),:)';
@@ -91,6 +91,28 @@ for k1=1:km1
     end
 end
 
+Xmax = 0;
+Ymax = 0;
+for z1=1:2
+    for z2=1:2
+        for kk1=1:km1
+            for kk2=1:km2
+                tmpM = CS{z1,z2,k1,k2};
+                Xmax = max(Xmax,size(tmpM,1));
+                Ymax = max(Ymax,size(tmpM,2));
+            end
+        end
+    end
+end
+XYmesh = cell(Xmax,Ymax,2);
+for Xiter = 1:Xmax
+    for Yiter = 1:Ymax
+        [X,Y] = meshgrid(1:Xiter,1:Yiter);
+        XYmesh{Xiter,Yiter,1} = X';
+        XYmesh{Xiter,Yiter,2} = Y';
+    end
+end
+
 totalH = CHeight;
 offset = COffset;
 for z1=1:2
@@ -100,10 +122,8 @@ for z1=1:2
                 for k1 = kk1:kk1+1
                     for k2 = kk2:kk2+1
                         tmpM = CS{z1,z2,k1,k2};
-                        [X,Y] = meshgrid(totalH+(1:size(tmpM,1)), ...
-                            currentW(k1,k2)+(1:size(tmpM,2)));
-                        X = X';
-                        Y = Y';
+                        X = XYmesh{size(tmpM,1),size(tmpM,2),1}+totalH+currentW(k1,k2);
+                        Y = XYmesh{size(tmpM,1),size(tmpM,2),2}+totalH+currentW(k1,k2);
                         idx = offset+1:offset+numel(X);
                         CPreSpr(level).XT(idx) = X(:);
                         CPreSpr(level).YT(idx) = Y(:);
