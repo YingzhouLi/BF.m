@@ -1,4 +1,4 @@
-function [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level, NL)
+function [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level, NL, XYmesh)
 
 H = size(W{1,1},1);
 [km1,km2] = size(W);
@@ -45,7 +45,7 @@ if( H <= 0 || level > NL )
         WPreSpr.Width = WWidth;
         return;
     end
-    [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level+1, NL);
+    [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, W, kk, kkgid, kbox, r, tol, level+1, NL, XYmesh);
     return;
 end
 
@@ -91,28 +91,6 @@ for k1=1:km1
     end
 end
 
-Xmax = 0;
-Ymax = 0;
-for z1=1:2
-    for z2=1:2
-        for kk1=1:km1
-            for kk2=1:km2
-                tmpM = CS{z1,z2,k1,k2};
-                Xmax = max(Xmax,size(tmpM,1));
-                Ymax = max(Ymax,size(tmpM,2));
-            end
-        end
-    end
-end
-XYmesh = cell(Xmax,Ymax,2);
-for Xiter = 1:Xmax
-    for Yiter = 1:Ymax
-        [X,Y] = meshgrid(1:Xiter,1:Yiter);
-        XYmesh{Xiter,Yiter,1} = X';
-        XYmesh{Xiter,Yiter,2} = Y';
-    end
-end
-
 totalH = CHeight;
 offset = COffset;
 for z1=1:2
@@ -152,7 +130,8 @@ for z1=1:2
         Id = kidx{z1,z2};
         ksubbox = [ k1os+(z1-1)*k1len/2, k1os+z1*k1len/2; ...
             k2os+(z2-1)*k2len/2, k2os+z2*k2len/2];
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, WW{z1,z2}, kk(Id,:), kkgid(Id), ksubbox, r, tol, level+1, NL);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr, CPreSpr, WW{z1,z2},...
+            kk(Id,:), kkgid(Id), ksubbox, r, tol, level+1, NL, XYmesh);
     end
 end
 

@@ -6,6 +6,6 @@ kr = sqrt(sx*(k(:,1).^2)');
 
 tmp = (2*pi)* (xk + kr);
 
-res = complex(cos(tmp),sin(tmp));
+res = exp(1i*tmp);
 
 end

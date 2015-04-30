@@ -9,7 +9,7 @@ if(ms>r)
     Rrow = randn(m,tR);
     Rcol = A*Rcol;
     Rrow = A'*Rrow;
-    for iter = 1:2
+    for iter = 1:0
         Rcol = A*(A'*Rcol);
         Rrow = A'*(A*Rrow);
     end
@@ -22,6 +22,10 @@ if(ms>r)
     V = Qrow*V(:,idx);
 else
     [U,S,V] = svd(A,'econ');
+    idx = find(find(diag(S)>tol*S(1,1))<=r);
+    U = U(:,idx);
+    S = S(idx,idx);
+    V = V(:,idx);
 end
 
 end

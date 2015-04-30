@@ -32,6 +32,15 @@ kidx = bf_prep(kk,kbox,npk1,npk2);
 f1all = randn(Nkk,tR);% + 1i*randn(Nkk,tR);
 f2all = randn(Nxx,tR);% + 1i*randn(Nxx,tR);
 
+XYmesh = cell(mR,mR,2);
+for Xiter = 1:mR
+    for Yiter = 1:mR
+        [X,Y] = meshgrid(1:Xiter,1:Yiter);
+        XYmesh{Xiter,Yiter,1} = X';
+        XYmesh{Xiter,Yiter,2} = Y';
+    end
+end
+
 levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
 LS = 4*mR^2*npk1*npk2*npx1*npx2;
 
@@ -44,6 +53,7 @@ end
 U_uc = cell(npx1,npx2,npk1,npk2);
 V_uc = cell(npx1,npx2,npk1,npk2);
 P = cell(npx1,npx2,npk1,npk2);
+Vtmpcell = cell(npx1,npx2,npk1,npk2);
 
 if(disp_flag)
     t_start = cputime;
@@ -140,9 +150,10 @@ for x1=1:npx1
 
                 RrVC = f2'*VC;
                 VRRc = VR'*f1;
-                [Utmp,Stmp,~] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
+                [Utmp,Stmp,Vtmp] = svdrand(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
                 U{k1,k2} = VC*Utmp*Stmp;
                 P{x1,x2,k1,k2} = 1./diag(Stmp);
+                Vtmpcell{x1,x2,k1,k2} = Vtmp*Stmp;
             end
         end
         xxsub = xx(xidx{x1,x2},:);
@@ -160,9 +171,11 @@ for x1=1:npx1
                 fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels,XYmesh);
     end
 end
+
+clear U_uc;
 
 if(disp_flag)
     fprintf('\n');
@@ -196,20 +209,11 @@ for k1=1:npk1
         V = cell(npx1,npx2);
         for x1=1:npx1
             for x2=1:npx2
-                ik = kidx{k1,k2};
-                ix = xidx{x1,x2};
-                f1=f1all(ik,:);
-                f2=f2all(ix,:);
-                BR = U_uc{x1,x2,k1,k2};
                 BHR = V_uc{x1,x2,k1,k2};
 
-                [VC,~] = qr(BR,0);
                 [VR,~] = qr(BHR,0);
 
-                RrVC = f2'*VC;
-                VRRc = VR'*f1;
-                [~,Stmp,Vtmp] = svdtrunc(pinv(RrVC) * f2'*BR * pinv(VRRc),mR,tol);
-                V{x1,x2} = VR*Vtmp*Stmp;
+                V{x1,x2} = VR*Vtmpcell{x1,x2,k1,k2};
             end
         end
         kksub = kk(kidx{k1,k2},:);
@@ -227,9 +231,11 @@ for k1=1:npk1
                 fprintf('(%4d/%4d) by (%4d/%4d)',k1,npk1,k2,npk2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels,XYmesh);
     end
 end
+
+clear V_uc Vtmpcell;
 
 if(disp_flag)
     fprintf('\n');

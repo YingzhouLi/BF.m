@@ -10,9 +10,9 @@ end
 compile_explicit();
 
 # Set up parameters
-N   = 256;
+N   = 64;
 tol = 1e-4;
-mR  = 16;
+mR  = 8;
 
 # Here the range is from -N/2 to N/2-1 for each dimension of k
 # and 0 to 1-1/N for each dimension of x.
@@ -56,9 +56,12 @@ if false
 end
 f = reshape(f,N^2);
 
+using ProfileView
+Profile.clear()
 tic();
-Factor = bf_explicit(fun, xx, xbox, kk, kbox, mR, tol, true);
+@profile Factor = bf_explicit(fun, xx, xbox, kk, kbox, mR, tol, true);
 FactorT = toc();
+ProfileView.view()
 
 tic();
 yy = apply_bf(Factor,f);

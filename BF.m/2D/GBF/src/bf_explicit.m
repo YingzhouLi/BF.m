@@ -28,12 +28,19 @@ end
 
 P = cell(npx1,npx2,npk1,npk2);
 Ridx = cell(npx1,npx2,npk1,npk2);
-Cidx = cell(npx1,npx2,npk1,npk2);
-rs = cell(npx1,npx2,npk1,npk2);
-cs = cell(npx1,npx2,npk1,npk2);
+Vtmpcell = cell(npx1,npx2,npk1,npk2);
 
 xidx = bf_prep(xx,xbox,npx1,npx2);
 kidx = bf_prep(kk,kbox,npk1,npk2);
+
+XYmesh = cell(mR,mR,2);
+for Xiter = 1:mR
+    for Yiter = 1:mR
+        [X,Y] = meshgrid(1:Xiter,1:Yiter);
+        XYmesh{Xiter,Yiter,1} = X';
+        XYmesh{Xiter,Yiter,2} = Y';
+    end
+end
 
 levels = max(ceil(log2(Nkk/npk1/npk2/mR/4)),0);
 LS = 4*mR^2*npk1*npk2*npx1*npx2;
@@ -56,7 +63,7 @@ for x1=1:npx1
             for k2=1:npk2
                 ik = kidx{k1,k2};
                 ix = xidx{x1,x2};
-                [U{k1,k2},Stmp,~,Ridx{x1,x2,k1,k2},Cidx{x1,x2,k1,k2},rs{x1,x2,k1,k2},cs{x1,x2,k1,k2}] = ...
+                [U{k1,k2},Stmp,Ridx{x1,x2,k1,k2},Vtmpcell{x1,x2,k1,k2}] = ...
                     lowrank(xx(ix,:), kk(ik,:), fun, tol, tR, mR);
                 P{x1,x2,k1,k2} = 1./diag(Stmp);
                 U{k1,k2} = U{k1,k2}*Stmp;
@@ -77,7 +84,7 @@ for x1=1:npx1
                 fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels,XYmesh);
     end
 end
 
@@ -125,9 +132,8 @@ for k1=1:npk1
             for x2=1:npx2
                 ik = kidx{k1,k2};
                 ix = xidx{x1,x2};
-                [~,Stmp,V{x1,x2}] = lowrankidx(xx(ix,:),kk(ik,:),fun,tol,mR,...
-                    Ridx{x1,x2,k1,k2},Cidx{x1,x2,k1,k2},rs{x1,x2,k1,k2},cs{x1,x2,k1,k2});
-                V{x1,x2} = V{x1,x2}*Stmp;
+                V{x1,x2} = lowrankidx(xx(ix,:),kk(ik,:),fun,...
+                    Ridx{x1,x2,k1,k2},Vtmpcell{x1,x2,k1,k2});
             end
         end
         kksub = kk(kidx{k1,k2},:);
@@ -145,9 +151,11 @@ for k1=1:npk1
                 fprintf('(%4d/%4d) by (%4d/%4d)',k1,npk1,k2,npk2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels,XYmesh);
     end
 end
+
+clear Vtmpcell;
 
 if(disp_flag)
     fprintf('\n');

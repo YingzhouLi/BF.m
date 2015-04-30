@@ -1,6 +1,6 @@
 close all;
 clear all;
-clc;
+%clc;
 
 addpath('../src/');
 data_path = './data/';
@@ -10,9 +10,9 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 256;
+N = 64;
 tol=1e-4;
-mR = 16;
+mR = 8;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
