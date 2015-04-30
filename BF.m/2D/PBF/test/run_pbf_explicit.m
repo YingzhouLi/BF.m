@@ -1,6 +1,7 @@
 function run_pbf_explicit(N, func_name, mR, tol, fid, saveflag)
 
 addpath('../../GBF/src/');
+addpath('../../GBF/test/');
 addpath('../src/');
 data_path = './data/';
 

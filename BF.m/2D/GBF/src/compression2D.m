@@ -100,14 +100,16 @@ for z1=1:2
                 for k1 = kk1:kk1+1
                     for k2 = kk2:kk2+1
                         tmpM = CS{z1,z2,k1,k2};
-                        X = XYmesh{size(tmpM,1),size(tmpM,2),1}+totalH;
-                        Y = XYmesh{size(tmpM,1),size(tmpM,2),2}+currentW(k1,k2);
-                        idx = offset+1:offset+numel(X);
-                        CPreSpr(level).XT(idx) = X(:);
-                        CPreSpr(level).YT(idx) = Y(:);
-                        CPreSpr(level).ST(idx) = tmpM(:);
-                        if(~isempty(idx))
-                            offset = idx(end);
+                        if(min(size(tmpM))>0)
+                            X = XYmesh{size(tmpM,1),size(tmpM,2),1}+totalH;
+                            Y = XYmesh{size(tmpM,1),size(tmpM,2),2}+currentW(k1,k2);
+                            idx = offset+1:offset+numel(X);
+                            CPreSpr(level).XT(idx) = X(:);
+                            CPreSpr(level).YT(idx) = Y(:);
+                            CPreSpr(level).ST(idx) = tmpM(:);
+                            if(~isempty(idx))
+                                offset = idx(end);
+                            end
                         end
                     end
                 end

@@ -32,14 +32,21 @@ end
 
 P = cell(npx1,npx2,npp1,npp2);
 Ridx = cell(npx1,npx2,npp1,npp2);
-Cidx = cell(npx1,npx2,npp1,npp2);
-rs = cell(npx1,npx2,npp1,npp2);
-cs = cell(npx1,npx2,npp1,npp2);
+Vtmpcell = cell(npx1,npx2,npp1,npp2);
 
 xidx = bf_prep(xx,xbox,npx1,npx2);
 pidx = bf_prep(pp,pbox,npp1,npp2);
 
-levels = max(ceil(log2(Nxx/npx1/npx2/mR/4)),0);
+XYmesh = cell(mR,mR,2);
+for Xiter = 1:mR
+    for Yiter = 1:mR
+        [X,Y] = meshgrid(1:Xiter,1:Yiter);
+        XYmesh{Xiter,Yiter,1} = X';
+        XYmesh{Xiter,Yiter,2} = Y';
+    end
+end
+
+levels = max(ceil(log2(Npp/npp1/npp2/mR/4)),0);
 LS = 4*mR^2*npp1*npp2*npx1*npx2;
 
 if(disp_flag)
@@ -60,7 +67,7 @@ for x1=1:npx1
             for p2=1:npp2
                 ip = pidx{p1,p2};
                 ix = xidx{x1,x2};
-                [U{p1,p2},Stmp,~,Ridx{x1,x2,p1,p2},Cidx{x1,x2,p1,p2},rs{x1,x2,p1,p2},cs{x1,x2,p1,p2}] = ...
+                [U{p1,p2},Stmp,Ridx{x1,x2,p1,p2},Vtmpcell{x1,x2,p1,p2}] = ...
                     lowrank(xx(ix,:), kk(ip,:), fun, tol, tR, mR);
                 P{x1,x2,p1,p2} = 1./diag(Stmp);
                 U{p1,p2} = U{p1,p2}*Stmp;
@@ -81,7 +88,7 @@ for x1=1:npx1
                 fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,U,xxsub,xidx{x1,x2},xsubbox,mR,tol,1,levels,XYmesh);
     end
 end
 
@@ -120,7 +127,7 @@ end
 CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
     'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
 WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
-    'ST',zeros(2*LS,1),'Height',Np^2,'Width',0,'Offset',0);
+    'ST',zeros(2*LS,1),'Height',Npp,'Width',0,'Offset',0);
 
 for p1=1:npp1
     for p2=1:npp2
@@ -129,9 +136,8 @@ for p1=1:npp1
             for x2=1:npx2
                 ip = pidx{p1,p2};
                 ix = xidx{x1,x2};
-                [~,Stmp,V{x1,x2}] = lowrankidx(xx(ix,:),kk(ip,:),fun,tol,mR,...
-                    Ridx{x1,x2,p1,p2},Cidx{x1,x2,p1,p2},rs{x1,x2,p1,p2},cs{x1,x2,p1,p2});
-                V{x1,x2} = V{x1,x2}*Stmp;
+                V{x1,x2} = lowrankidx(xx(ix,:),kk(ip,:),fun,...
+                    Ridx{x1,x2,p1,p2},Vtmpcell{x1,x2,p1,p2});
             end
         end
         ppsub = pp(pidx{p1,p2},:);
@@ -149,9 +155,11 @@ for p1=1:npp1
                 fprintf('(%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
             end
         end
-        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,ppsub,pidx{p1,p2},psubbox,mR,tol,1,levels);
+        [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,ppsub,pidx{p1,p2},psubbox,mR,tol,1,levels,XYmesh);
     end
 end
+
+clear Vtmpcell;
 
 if(disp_flag)
     fprintf('\n');
@@ -284,4 +292,5 @@ Factor.BTol = BTol;
 clear BTol;
 Factor.V = VSpr;
 clear VSpr;
+
 end

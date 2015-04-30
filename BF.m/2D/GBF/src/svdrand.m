@@ -22,10 +22,12 @@ if(ms>r)
     V = Qrow*V(:,idx);
 else
     [U,S,V] = svd(A,'econ');
-    idx = find(find(diag(S)>tol*S(1,1))<=r);
-    U = U(:,idx);
-    S = S(idx,idx);
-    V = V(:,idx);
+    if(ms>0)
+        idx = find(find(diag(S)>tol*S(1,1))<=r);
+        U = U(:,idx);
+        S = S(idx,idx);
+        V = V(:,idx);
+    end
 end
 
 end

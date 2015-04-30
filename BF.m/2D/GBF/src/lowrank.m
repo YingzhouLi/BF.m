@@ -7,6 +7,7 @@ if(Nx==0 || Np==0)
     U = zeros(Nx,0);
     S = zeros(0,0);
     Ridx = [];
+    Vtmp = zeros(0,0);
     return;
 end
 
