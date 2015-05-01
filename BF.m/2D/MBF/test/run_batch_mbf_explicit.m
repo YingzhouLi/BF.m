@@ -7,7 +7,7 @@ end
 func_list = {'fun0'};
 for func_i = 1:length(func_list)
     func_name = func_list{func_i};
-    for N = 2.^(6:9)
+    for N = 2.^(6:8)
         fid = fopen([log_path 'Factor_' func_name '_' num2str(N) '.log'],'a+');
         for mR = (3:6).^2
             tol = 1e-5;
