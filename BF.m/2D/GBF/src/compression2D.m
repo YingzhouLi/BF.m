@@ -66,14 +66,16 @@ for k1=1:2:km1
         for i=1:2
             for j=1:2
                 Id = kidx{i,j};
-                chunk = [W{k1,k2}(Id,:), W{k1,k2+1}(Id,:), ...
-                    W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
-                [Wtmp,S,V] = svdrand(chunk,r,tol);
-                WW{i,j}{(k1+1)/2,(k2+1)/2} = Wtmp*S;
-                CS{i,j,k1,k2} = V(1:r1,:)';
-                CS{i,j,k1,k2+1} = V(r1+(1:r2),:)';
-                CS{i,j,k1+1,k2} = V(r1+r2+(1:r3),:)';
-                CS{i,j,k1+1,k2+1} = V(r1+r2+r3+(1:r4),:)';
+                if(~isempty(W{k1,k2}))
+                    chunk = [W{k1,k2}(Id,:), W{k1,k2+1}(Id,:), ...
+                        W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
+                    [Wtmp,S,V] = svdrand(chunk,r,tol);
+                    WW{i,j}{(k1+1)/2,(k2+1)/2} = Wtmp*S;
+                    CS{i,j,k1,k2} = V(1:r1,:)';
+                    CS{i,j,k1,k2+1} = V(r1+(1:r2),:)';
+                    CS{i,j,k1+1,k2} = V(r1+r2+(1:r3),:)';
+                    CS{i,j,k1+1,k2+1} = V(r1+r2+r3+(1:r4),:)';
+                end
             end
         end
     end

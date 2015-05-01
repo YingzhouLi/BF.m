@@ -30,7 +30,7 @@ x = (0:N-1)'/N;
 x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
-FmR = 12;
+FmR = 8;
 func1_name = 'funF';
 func2_name = 'funF';
 Factor1 = load([data_path 'Factor_' func1_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factor');
