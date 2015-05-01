@@ -63,7 +63,7 @@ for iter = 1:coronalevels
         end
     end
 
-    levels = max(ceil(log2(Nkk/npk1/npk2/mR/4)),0);
+    levels = max(ceil(log2(Nkk/npk1/npk2/mR/4))-1,0);
     LS = 4*mR^2*npk1*npk2*npx1*npx2;
 
     if(disp_flag)
