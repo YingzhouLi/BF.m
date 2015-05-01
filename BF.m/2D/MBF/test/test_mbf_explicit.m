@@ -12,7 +12,7 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 64;
+N = 1024;
 tol=1e-4;
 mR = 8;
 
