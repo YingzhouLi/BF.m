@@ -61,7 +61,7 @@ end
 f = reshape(f,N^2,1);
 
 tic;
-Factor = mbf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 1);
+Factor = mbf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 0);
 FactorT = toc;
 
 tic;

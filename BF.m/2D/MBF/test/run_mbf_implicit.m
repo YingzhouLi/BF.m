@@ -1,5 +1,6 @@
 function run_mbf_implicit(N, fun, fun_adj, mR, tol, fid)
 
+addpath('../../GBF/src/');
 addpath('../src/');
 data_path = './data/';
 
@@ -25,7 +26,7 @@ f = reshape(f,N^2,1);
 y = fun(f);
 
 tic;
-Factor = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1);
+Factor = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 0);
 FactorT = toc;
 
 tic;

@@ -1,5 +1,7 @@
 function run_mbf_explicit(N, func_name, mR, tol, fid, saveflag)
 
+addpath('../../GBF/src/');
+addpath('../../GBF/test/');
 addpath('../src/');
 data_path = './data/';
 
@@ -34,7 +36,7 @@ f = randn(N,N) + 1i*randn(N,N);
 f = reshape(f,N^2,1);
 
 tic;
-Factor = mbf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 1);
+Factor = mbf_explicit(fun, xx, xbox, kk, kbox, mR, tol, 0);
 FactorT = toc;
 
 tic;
