@@ -8,17 +8,17 @@ end
 Nxx = size(xx,1);
 Nx = floor(sqrt(Nxx));
 
-tR=mR+5;
+tR=3*mR;
 coronalevels = ceil(log2(Nx/16));
 Factors = cell(coronalevels+1,2);
 kkidglobal = 1:size(kk,1);
 
 for iter = 1:coronalevels
-    
+
     % Nk is the square root of the number of source points in phase
     Nkk = size(kk,1);
     Nk = floor(sqrt(Nkk));
-    
+
     ckbox = kbox/2;
     ck1s = ckbox(1,1);
     ck1e = ckbox(1,2);
@@ -30,7 +30,7 @@ for iter = 1:coronalevels
         & kk(:,2)>=ck2s & kk(:,2)<ck2e );
     Factors{iter,2} = kkidglobal(kkid);
     kkcp = kk;
-    
+
     kk = kk(kkid,:);
 
     % npx is the number of blocks of each dimension in space
@@ -317,7 +317,7 @@ for iter = 1:coronalevels
     clear VSpr;
     Factors{iter,1} = Factor;
     clear Factor;
-    
+
     kbox = ckbox;
     kk = kkcp(ckkid,:);
     kkidglobal = kkidglobal(ckkid);

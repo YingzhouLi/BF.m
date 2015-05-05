@@ -15,7 +15,7 @@ Nx = floor(sqrt(Nxx));
 [Npp,~] = size(pp);
 Np = floor(sqrt(Npp));
 
-tR=mR+5;
+tR=3*mR;
 
 % npx is the number of blocks of each dimension in space
 npx1 = 2^ceil(log2(sqrt(Nx)));
