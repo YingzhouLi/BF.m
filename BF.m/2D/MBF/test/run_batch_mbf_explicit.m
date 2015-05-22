@@ -11,7 +11,7 @@ for func_i = 1:length(func_list)
         fid = fopen([log_path 'Factor_' func_name '_' num2str(N) '.log'],'a+');
         for mR = [12 20 28]
             tol = 10^(-(mR-4)/8-1);
-            run_mbf_explicit(N, func_name, mR, tol, fid, mR==24);
+            run_mbf_explicit(N, func_name, mR, tol, fid, mR==28);
             fprintf('Func %s, N %4d, mR %2d finished.\n',func_list{func_i},N,mR);
         end
         fclose(fid);
