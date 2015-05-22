@@ -8,7 +8,7 @@ end
 Nxx = size(xx,1);
 Nx = floor(sqrt(Nxx));
 
-tR=3*mR;
+tR=mR+10;
 coronalevels = ceil(log2(Nx/16));
 Factors = cell(coronalevels+1,2);
 kkidglobal = 1:size(kk,1);

@@ -59,6 +59,7 @@ CS = cell(2,2,km1,km2);
 kidx = bf_prep(kk,kbox,2,2);
 for k1=1:2:km1
     for k2=1:2:km2
+        hh = size(W{k1,k2},1);
         r1 = size(W{k1,k2},2);
         r2 = size(W{k1,k2+1},2);
         r3 = size(W{k1+1,k2},2);
@@ -66,7 +67,7 @@ for k1=1:2:km1
         for i=1:2
             for j=1:2
                 Id = kidx{i,j};
-                if(~isempty(W{k1,k2}))
+                if(hh>0)
                     chunk = [W{k1,k2}(Id,:), W{k1,k2+1}(Id,:), ...
                         W{k1+1,k2}(Id,:), W{k1+1,k2+1}(Id,:) ];
                     [Wtmp,S,V] = svdrand(chunk,r,tol);

@@ -37,8 +37,8 @@ for iter = 1:coronalevels
     gkkid = kkidglobal(kkid);
 
     % npx is the number of blocks of each dimension in space
-    npx1 = 2^ceil(log2(sqrt(Nx)));
-    npx2 = 2^ceil(log2(sqrt(Nx)));
+    npx1 = 2^ceil(log2(sqrt(Nk)));
+    npx2 = 2^ceil(log2(sqrt(Nk)));
     % npp is the number of blocks of each dimension in phase
     npk1 = 2^ceil(log2(sqrt(Nk)));
     npk2 = 2^ceil(log2(sqrt(Nk)));
@@ -70,7 +70,7 @@ for iter = 1:coronalevels
 
     if(disp_flag)
         fprintf('Compression levels: %d\n',levels);
-        fprintf('Preallocated sparse matrix size: %d, about %.2f GB\n\n', ...
+        fprintf('Preallocated sparse matrix size: %d, about %.2f GB\n', ...
             LS,LS*(levels+2)*(2*8+16)/1024/1024/1024);
     end
 
@@ -159,7 +159,7 @@ for iter = 1:coronalevels
     CPreSpr = repmat(struct('XT',zeros(LS,1),'YT',zeros(LS,1), ...
         'ST',zeros(LS,1),'Height',0,'Width',0,'Offset',0),levels,1);
     WPreSpr = struct('XT',zeros(2*LS,1),'YT',zeros(2*LS,1), ...
-        'ST',zeros(2*LS,1),'Height',Nx^2,'Width',0,'Offset',0);
+        'ST',zeros(2*LS,1),'Height',Nxx,'Width',0,'Offset',0);
 
     for x1=1:npx1
         for x2=1:npx2
@@ -226,7 +226,7 @@ for iter = 1:coronalevels
         memsize = whos('USpr');
         fprintf('Compressed U Memory: %.2f GB\n',memsize.bytes/1024/1024/1024);
         memsize = whos('ATol');
-        fprintf('Compressed A Memory: %.2f GB\n\n',memsize.bytes/1024/1024/1024);
+        fprintf('Compressed A Memory: %.2f GB\n',memsize.bytes/1024/1024/1024);
         clear memsize;
     end
 
@@ -264,7 +264,8 @@ for iter = 1:coronalevels
                         fprintf('(%4d/%4d) by (%4d/%4d)',k1,npk1,k2,npk2);
                     end
                 end
-                [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels,XYmesh);
+                [WPreSpr,CPreSpr] = compression2D(WPreSpr,CPreSpr,V,...
+		    kksub,kidx{k1,k2},ksubbox,mR,tol,1,levels,XYmesh);
             end
         end
     end
@@ -289,7 +290,7 @@ for iter = 1:coronalevels
         memsize = whos('VSpr');
         fprintf('Compressed V Memory: %.2f GB\n',memsize.bytes/1024/1024/1024);
         memsize = whos('BTol');
-        fprintf('Compressed B Memory: %.2f GB\n\n',memsize.bytes/1024/1024/1024);
+        fprintf('Compressed B Memory: %.2f GB\n',memsize.bytes/1024/1024/1024);
         clear memsize;
     end
 
@@ -377,7 +378,7 @@ for iter = 1:coronalevels
     clear XT YT ST;
     if(disp_flag)
         memsize = whos('SigmaM');
-        fprintf('Compressed M Memory: %.2f GB\n\n',memsize.bytes/1024/1024/1024);
+        fprintf('Compressed M Memory: %.2f GB\n',memsize.bytes/1024/1024/1024);
         clear memsize;
     end
 

@@ -12,9 +12,9 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 64;
-tol=1e-4;
-mR = 8;
+N = 256;
+tol=1e-5;
+mR = 4;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
