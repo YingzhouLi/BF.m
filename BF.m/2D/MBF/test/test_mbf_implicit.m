@@ -1,6 +1,6 @@
 close all;
 clear all;
-clc;
+%clc;
 
 addpath('../../GBF/src/');
 addpath('../src/');
@@ -13,7 +13,7 @@ end
 %% Set up parameters
 N = 128;
 tol=1e-5;
-mR = 9;
+mR = 32;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
@@ -31,7 +31,7 @@ x = (0:N-1)'/N;
 x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
-FmR = 36;
+FmR = 28;
 func1_name = 'fun0';
 func2_name = 'fun0';
 Factor1 = load([data_path 'Factor_' func1_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factor');
