@@ -1,6 +1,6 @@
 close all;
 clear all;
-clc;
+%clc;
 
 addpath('../../GBF/src/');
 addpath('../../GBF/test/');
@@ -32,11 +32,11 @@ x = (0:N-1)'/N;
 x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
-FmR = 8;
-func1_name = 'funF';
-func2_name = 'funF';
+FmR = 22;
+func1_name = 'fun0';
+func2_name = 'fun0';
 Factor1 = load([data_path 'Factor_' func1_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factor');
-Factor2 = load([data_path 'Factor_' func2_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factor');
+Factor2 = Factor1;%load([data_path 'Factor_' func2_name '_' num2str(N) '_' num2str(FmR) '.mat'],'Factor');
 
 fun = @(x)apply_bf(Factor2.Factor,...
     reshape(fft2(reshape(apply_bf(Factor1.Factor,x),N,N,[]))/N,N^2,[]));
