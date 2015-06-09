@@ -1,4 +1,15 @@
-function Factors = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, disp_flag)
+function [Factors,timeinfo] = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, disp_flag, runlimit)
+
+if(nargin<10)
+    runlimit = -1;
+end
+
+if(runlimit>0)
+    savefile = ['tmp/mbf_implicit_' num2str(floor(sqrt(size(xx,1)))) '_' num2str(mR) '.mat'];
+    if(~exist('tmp/', 'dir'))
+        mkdir('tmp/');
+    end
+end
 
 if(disp_flag)
     fprintf('Multiscale Butterfly Factorization implicit version started...\n');
@@ -12,10 +23,49 @@ NNkk = size(kk,1);
 
 tR=mR+5;
 coronalevels = ceil(log2(Nx/16));
-Factors = cell(coronalevels+1,2);
+
 kkidglobal = 1:size(kk,1);
 
-for iter = 1:coronalevels
+if(runlimit>0 && exist(savefile,'file'))
+    tmpdata = load(savefile);
+    iters = tmpdata.iters;
+    k1s = tmpdata.k1s;
+    x1s = tmpdata.x1s;
+    f1all = tmpdata.f1all;
+    f2all = tmpdata.f2all;
+    U_uc = tmpdata.U_uc;
+    V_uc = tmpdata.V_uc;
+    all_t = tmpdata.all_t;
+    Factors = tmpdata.Factors;
+    clear tmpdata;
+else
+    k1s = ones(coronalevels,1);
+    x1s = ones(coronalevels,1);
+    iters = 1;
+    Factors = cell(coronalevels+1,2);
+    all_t = 0;
+end
+
+for iter = 1:iters-1
+    ckbox = kbox/2;
+    ck1s = ckbox(1,1);
+    ck1e = ckbox(1,2);
+    ck2s = ckbox(2,1);
+    ck2e = ckbox(2,2);
+    kkid = find( (kk(:,1)<ck1s | kk(:,1)>=ck1e) ...
+        | (kk(:,2)<ck2s | kk(:,2)>=ck2e) );
+    ckkid = find( kk(:,1)>=ck1s & kk(:,1)<ck1e ...
+        & kk(:,2)>=ck2s & kk(:,2)<ck2e );
+    Factors{iter,2} = kkidglobal(kkid);
+    kkcp = kk;
+    kbox = ckbox;
+    kk = kkcp(ckkid,:);
+    kkidglobal = kkidglobal(ckkid);
+end
+
+all_t_start = cputime;
+
+for iter = iters:coronalevels
     
     % Nk is the square root of the number of source points in phase
     Nkk = size(kk,1);
@@ -52,9 +102,12 @@ for iter = 1:coronalevels
 
     xidx = bf_prep(xx,xbox,npx1,npx2);
     kidx = bf_prep(kk,kbox,npk1,npk2);
-
-    f1all = randn(Nkk,tR);
-    f2all = randn(Nxx,tR);
+    if (~(runlimit>0 && exist(savefile,'file')) || iter ~= iters )
+        f1all = randn(Nkk,tR);
+        f2all = randn(Nxx,tR);
+        U_uc = cell(npx1,npx2,npk1,npk2);
+        V_uc = cell(npx1,npx2,npk1,npk2);
+    end
 
     XYmesh = cell(mR,mR,2);
     for Xiter = 1:mR
@@ -74,8 +127,6 @@ for iter = 1:coronalevels
             LS,LS*(levels+2)*(2*8+16)/1024/1024/1024);
     end
 
-    U_uc = cell(npx1,npx2,npk1,npk2);
-    V_uc = cell(npx1,npx2,npk1,npk2);
     P = cell(npx1,npx2,npk1,npk2);
     Vtmpcell = cell(npx1,npx2,npk1,npk2);
 
@@ -83,7 +134,7 @@ for iter = 1:coronalevels
         t_start = cputime;
     end
 
-    for k1=1:npk1
+    for k1=k1s(iter):npk1
         for k2=1:npk2
             ik = kidx{k1,k2};
             if(~isempty(ik))
@@ -98,13 +149,23 @@ for iter = 1:coronalevels
                 end
             end
             if(disp_flag)
-                if( k1==1 && k2==1 )
+                if( k1==k1s(iter) && k2==1 )
                     fprintf('Multiply U block: (%4d/%4d) by (%4d/%4d)',k1,npk1,k2,npk2);
                 else
                     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
                     fprintf('(%4d/%4d) by (%4d/%4d)',k1,npk1,k2,npk2);
                 end
             end
+        end
+        if( runlimit>0 && cputime-all_t_start > runlimit*60*60 )
+            fprintf('\n');
+            k1s(iter) = k1+1;
+            x1s = ones(coronalevels,1);
+            all_t = all_t + cputime - all_t_start;
+            iters = iter;
+            save(savefile,'k1s','x1s','f1all','f2all','U_uc','V_uc','all_t','Factors','iters','-v7.3');
+            timeinfo = -1;
+            return;
         end
     end
 
@@ -122,7 +183,7 @@ for iter = 1:coronalevels
         t_start = cputime;
     end
 
-    for x1=1:npx1
+    for x1=x1s(iter):npx1
         for x2=1:npx2
             ix = xidx{x1,x2};
             f2 = zeros(Nxx,tR);
@@ -137,13 +198,23 @@ for iter = 1:coronalevels
                 end
             end
             if(disp_flag)
-                if( x1==1 && x2==1 )
+                if( x1==x1s(iter) && x2==1 )
                     fprintf('Multiply V block: (%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
                 else
                     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
                     fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
                 end
             end
+        end
+        if( runlimit>0 && cputime-all_t_start > runlimit*60*60 )
+            fprintf('\n');
+            k1s(iter) = npk1+1;
+            x1s(iter) = x1+1;
+            all_t = all_t + cputime - all_t_start;
+            iters = iter;
+            save(savefile,'k1s','x1s','f1all','f2all','U_uc','V_uc','all_t','Factors','iters','-v7.3');
+            timeinfo = -1;
+            return;
         end
     end
 
@@ -406,5 +477,6 @@ Nkk = size(kk,1);
 xvec = zeros(NNkk,Nkk);
 xvec(kkidglobal,:) = eye(Nkk);
 Factors{end,1} = fun(xvec);
+timeinfo = all_t + cputime - all_t_start;
 
 end

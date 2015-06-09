@@ -3,6 +3,7 @@ clear all;
 %clc;
 
 addpath('../../GBF/src/');
+addpath('../../GBF/test/');
 addpath('../src/');
 data_path = './data/';
 
@@ -11,9 +12,9 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 128;
-tol=1e-5;
-mR = 32;
+N = 64;
+tol=1e-4;
+mR = 22;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
@@ -60,9 +61,10 @@ f = reshape(f,N^2,1);
 
 y = fun(f);
 
-tic;
-Factor = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1);
-FactorT = toc;
+[Factor,FactorT] = mbf_implicit(fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1, 0.02);
+if(FactorT<0)
+    return;
+end
 
 tic;
 yy = apply_mbf(Factor,f);
