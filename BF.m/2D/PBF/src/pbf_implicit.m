@@ -1,4 +1,15 @@
-function Factor = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, disp_flag)
+function [Factor,timeinfo] = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, disp_flag, runlimit)
+
+if(nargin<11)
+    runlimit = -1;
+end
+
+if(runlimit>0)
+    savefile = ['tmp/pbf_implicit_' num2str(N) '_' num2str(mR) '.mat'];
+    if(~exist('tmp/', 'dir'))
+        mkdir('tmp/');
+    end
+end
 
 if(disp_flag)
     fprintf('Butterfly Factorization implicit version started...\n\n');
@@ -33,8 +44,27 @@ end
 xidx = bf_prep(xx,xbox,npx1,npx2);
 pidx = bf_prep(pp,pbox,npp1,npp2);
 
-f1all = randn(Npp,tR);% + 1i*randn(Nkk,tR);
-f2all = randn(Nxx,tR);% + 1i*randn(Nxx,tR);
+if(runlimit>0 && exist(savefile,'file'))
+    tmpdata = load(savefile);
+    p1s = tmpdata.p1s;
+    x1s = tmpdata.x1s;
+    f1all = tmpdata.f1all;
+    f2all = tmpdata.f2all;
+    U_uc = tmpdata.U_uc;
+    V_uc = tmpdata.V_uc;
+    all_t = tmpdata.all_t;
+    clear tmpdata;
+else
+    p1s = 1;
+    x1s = 1;
+    f1all = randn(Npp,tR);% + 1i*randn(Nkk,tR);
+    f2all = randn(Nxx,tR);% + 1i*randn(Nxx,tR);
+    U_uc = cell(npx1,npx2,npp1,npp2);
+    V_uc = cell(npx1,npx2,npp1,npp2);
+    all_t = 0;
+end
+
+all_t_start = cputime;
 
 XYmesh = cell(mR,mR,2);
 for Xiter = 1:mR
@@ -54,8 +84,6 @@ if(disp_flag)
         LS,LS*(levels+2)*(2*8+16)/1024/1024/1024);
 end
 
-U_uc = cell(npx1,npx2,npp1,npp2);
-V_uc = cell(npx1,npx2,npp1,npp2);
 P = cell(npx1,npx2,npp1,npp2);
 Vtmpcell = cell(npx1,npx2,npp1,npp2);
 
@@ -63,7 +91,7 @@ if(disp_flag)
     t_start = cputime;
 end
 
-for p1=1:npp1
+for p1=p1s:npp1
     for p2=1:npp2
         ip = pidx{p1,p2};
         f1 = zeros(Npp,tR);
@@ -76,13 +104,23 @@ for p1=1:npp1
             end
         end
         if(disp_flag)
-            if( p1==1 && p2==1 )
+            if( p1==p1s && p2==1 )
                 fprintf('Multiply U block: (%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
             else
                 fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
                 fprintf('(%4d/%4d) by (%4d/%4d)',p1,npp1,p2,npp2);
             end
         end
+    end
+    if( runlimit>0 && cputime-all_t_start>runlimit*60*60 )
+        fprintf('\n');
+        p1s = p1+1;
+        x1s = 1;
+        all_t = all_t + cputime - all_t_start;
+        save(savefile,'p1s','x1s','f1all','f2all','U_uc','V_uc','all_t','-v7.3');
+        timeinfo = -1;
+        Factor = [];
+        return;
     end
 end
 
@@ -100,7 +138,7 @@ if(disp_flag)
     t_start = cputime;
 end
 
-for x1=1:npx1
+for x1=x1s:npx1
     for x2=1:npx2
         ix = xidx{x1,x2};
         f2 = zeros(Nxx,tR);
@@ -113,13 +151,23 @@ for x1=1:npx1
             end
         end
         if(disp_flag)
-            if( x1==1 && x2==1 )
+            if( x1==x1s && x2==1 )
                 fprintf('Multiply V block: (%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
             else
                 fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
                 fprintf('(%4d/%4d) by (%4d/%4d)',x1,npx1,x2,npx2);
             end
         end
+    end
+    if( runlimit>0 && cputime-all_t_start > runlimit*60*60 )
+        fprintf('\n');
+        p1s = npp1+1;
+        x1s = x1+1;
+        all_t = all_t + cputime - all_t_start;
+        save(savefile,'p1s','x1s','f1all','f2all','U_uc','V_uc','all_t','-v7.3');
+        timeinfo = -1;
+        Factor = [];
+        return;
     end
 end
 
@@ -362,5 +410,6 @@ Factor.BTol = BTol;
 clear BTol;
 Factor.V = VSpr;
 clear VSpr;
+timeinfo = all_t + cputime - all_t_start;
 
 end

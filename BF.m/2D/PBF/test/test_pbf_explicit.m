@@ -12,9 +12,9 @@ if(~exist(data_path, 'dir'))
 end
 
 %% Set up parameters
-N = 256;
-tol=1e-5;
-mR = 4;
+N = 64;
+tol=1e-4;
+mR = 22;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
@@ -32,7 +32,7 @@ x = (0:N-1)'/N;
 x1s = x1s(:);  x2s = x2s(:);
 xx = [x1s x2s];
 
-func_name = 'funF';
+func_name = 'fun0';
 switch func_name
     case 'funF'
         fun = @funF;

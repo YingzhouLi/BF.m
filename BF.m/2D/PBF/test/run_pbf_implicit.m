@@ -25,9 +25,10 @@ f = reshape(f,N^2,1);
 
 y = fun(f);
 
-tic;
-Factor = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1);
-FactorT = toc;
+[Factor,FactorT] = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 0, 5);
+if(FactorT<0)
+    return;
+end
 
 tic;
 yy = apply_bf(Factor,f);

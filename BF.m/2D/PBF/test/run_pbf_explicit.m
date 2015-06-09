@@ -36,7 +36,7 @@ f = randn(N,N) + 1i*randn(N,N);
 f = reshape(f,N^2,1);
 
 tic;
-Factor = pbf_explicit(N, fun, xx, xbox, kk, kbox, mR, tol, 1);
+Factor = pbf_explicit(N, fun, xx, xbox, kk, kbox, mR, tol, 0);
 FactorT = toc;
 
 tic;

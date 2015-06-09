@@ -13,8 +13,8 @@ end
 
 %% Set up parameters
 N = 64;
-tol=1e-5;
-mR = 12;
+tol=1e-4;
+mR = 20;
 
 % The index is different from 1D case.
 % Here the range is from -N/2 to N/2-1 for each dimension of k
@@ -61,9 +61,10 @@ f = reshape(f,N^2,1);
 
 y = fun(f);
 
-tic;
-Factor = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1);
-FactorT = toc;
+[Factor,FactorT] = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 1, 0.1);
+if(FactorT<0)
+    return;
+end
 
 tic;
 yy = apply_bf(Factor,f);

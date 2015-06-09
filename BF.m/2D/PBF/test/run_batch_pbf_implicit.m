@@ -10,7 +10,7 @@ if(~exist(log_path, 'dir'))
     mkdir(log_path);
 end
 
-func_list = {'funF'};
+func_list = {'fun0'};
 for func_i = 1:length(func_list)
     func_name = func_list{func_i};
     for N = 2.^(6:7)
