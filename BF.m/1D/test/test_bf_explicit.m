@@ -21,7 +21,7 @@ xbox = [1,N+1];
 x = 1:N;
 xx = x(:);
 
-func_name = 'fun0';
+func_name = 'funF';
 switch func_name
     case 'fun0'
         fun = @(x,k)fun0(N,x,k);
@@ -57,7 +57,7 @@ RunT = FactorT + ApplyT;
 
 NC = 256;
 tic;
-relerr = bf_explicit_check(N,fun,f,yy,NC);
+relerr = bf_explicit_check(N,fun,f,xx,kk,yy,NC);
 Td = toc;
 Td = Td*N/NC;
 
