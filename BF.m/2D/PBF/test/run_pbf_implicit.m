@@ -25,7 +25,7 @@ f = reshape(f,N^2,1);
 
 y = fun(f);
 
-[Factor,FactorT] = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 0, 5);
+[Factor,FactorT] = pbf_implicit(N, fun, fun_adj, xx, xbox, kk, kbox, mR, tol, 0, 0.02);
 if(FactorT<0)
     return;
 end
